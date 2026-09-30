@@ -42,7 +42,7 @@ export const ResourceHUD: React.FC<ResourceHUDProps> = ({
         <div className="sol-badge">
           <span className="sol-pulse">●</span>
           <span className="sol-title">SOL {sol} / {totalSols}</span>
-          <span className="sol-location">· SHACKLETON CRATER RIM (MOON)</span>
+          <span className="sol-location hidden sm:inline">· SHACKLETON CRATER RIM (MOON)</span>
         </div>
 
         {/* 5-Tier Age Selector */}
@@ -70,7 +70,8 @@ export const ResourceHUD: React.FC<ResourceHUDProps> = ({
                   transition: 'all 0.2s ease',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '4px'
+                  gap: '4px',
+                  flexShrink: 0
                 }}
                 title={`${p.label} (${p.ageRange}): ${p.tagline}`}
               >
@@ -88,7 +89,7 @@ export const ResourceHUD: React.FC<ResourceHUDProps> = ({
         <div className="meter-card" style={{ borderColor: getMeterColor(resources.power) }}>
           <div className="meter-header">
             <span className="meter-label">
-              <Zap size={15} className="text-amber-400" />
+              <Zap size={15} className="text-amber-400 shrink-0" />
               <span>POWER</span>
             </span>
             <span className="meter-val" style={{ color: getMeterColor(resources.power) }}>
@@ -107,7 +108,7 @@ export const ResourceHUD: React.FC<ResourceHUDProps> = ({
         <div className="meter-card" style={{ borderColor: getMeterColor(resources.water) }}>
           <div className="meter-header">
             <span className="meter-label">
-              <Droplets size={15} className="text-cyan-400" />
+              <Droplets size={15} className="text-cyan-400 shrink-0" />
               <span>WATER</span>
             </span>
             <span className="meter-val" style={{ color: getMeterColor(resources.water) }}>
@@ -126,7 +127,7 @@ export const ResourceHUD: React.FC<ResourceHUDProps> = ({
         <div className="meter-card" style={{ borderColor: getMeterColor(resources.oxygen) }}>
           <div className="meter-header">
             <span className="meter-label">
-              <Wind size={15} className="text-sky-300" />
+              <Wind size={15} className="text-sky-300 shrink-0" />
               <span>OXYGEN</span>
             </span>
             <span className="meter-val" style={{ color: getMeterColor(resources.oxygen) }}>
@@ -145,7 +146,7 @@ export const ResourceHUD: React.FC<ResourceHUDProps> = ({
         <div className="meter-card" style={{ borderColor: getMeterColor(resources.food * 5) }}>
           <div className="meter-header">
             <span className="meter-label">
-              <Apple size={15} className="text-emerald-400" />
+              <Apple size={15} className="text-emerald-400 shrink-0" />
               <span>FOOD</span>
             </span>
             <span className="meter-val" style={{ color: getMeterColor(resources.food * 5) }}>
@@ -164,7 +165,7 @@ export const ResourceHUD: React.FC<ResourceHUDProps> = ({
         <div className="meter-card" style={{ borderColor: getMeterColor(resources.radiation, true) }}>
           <div className="meter-header">
             <span className="meter-label">
-              <ShieldAlert size={15} className={resources.radiation > 40 ? "text-rose-500 animate-pulse" : "text-slate-400"} />
+              <ShieldAlert size={15} className={`shrink-0 ${resources.radiation > 40 ? "text-rose-500 animate-pulse" : "text-slate-400"}`} />
               <span>DOSIMETER</span>
             </span>
             <span className="meter-val" style={{ color: getMeterColor(resources.radiation, true) }}>
@@ -183,10 +184,10 @@ export const ResourceHUD: React.FC<ResourceHUDProps> = ({
         <div className="meter-card science-card">
           <div className="meter-header">
             <span className="meter-label">
-              <Award size={15} className="text-amber-300 animate-bounce" />
-              <span className="text-amber-300 font-bold">SCIENCE (GOAL: 300)</span>
+              <Award size={15} className="text-amber-300 animate-bounce shrink-0" />
+              <span className="text-amber-300 font-bold truncate">SCIENCE <span className="hidden sm:inline">(GOAL: 300)</span></span>
             </span>
-            <span className="meter-val text-amber-300 font-extrabold">
+            <span className="meter-val text-amber-300 font-extrabold whitespace-nowrap">
               {resources.science} / 300 RP
             </span>
           </div>

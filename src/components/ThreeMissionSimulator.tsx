@@ -751,119 +751,192 @@ export const ThreeMissionSimulator: React.FC<ThreeMissionSimulatorProps> = ({
     };
   }, [mission, cameraMode]);
 
+  const setSimKey = (key: string, active: boolean) => {
+    simStateRef.current.keys[key] = active;
+  };
+
+  const handleTouchStaging = () => {
+    const state = simStateRef.current;
+    if (state.stage === 1 && (mission.params as LaunchParams).hasStageSeparation && state.altitudeKm > 25) {
+      state.stage = 2;
+      state.statusText = 'STAGE 1 SEPARATION CONFIRMED · S-II IGNITION';
+      state.statusColor = '#f59e0b';
+      soundFx.playRadioChirp();
+    }
+  };
+
   return (
-    <div className="relative w-full h-[620px] bg-slate-950 rounded-2xl overflow-hidden border border-cyan-500/30 shadow-2xl flex flex-col select-none">
+    <div className="relative w-full h-[460px] sm:h-[540px] md:h-[620px] bg-slate-950 rounded-2xl overflow-hidden border border-cyan-500/30 shadow-2xl flex flex-col select-none">
       {/* 3D WebGL Canvas Mount */}
       <div ref={mountRef} className="w-full h-full absolute inset-0 cursor-crosshair" />
 
       {/* TOP NASA GLASS COCKPIT TELEMETRY BAR */}
-      <div className="absolute top-3 inset-x-3 z-20 flex flex-wrap items-center justify-between gap-3 bg-slate-900/85 backdrop-blur-md px-4 py-2.5 rounded-xl border border-cyan-500/30 text-xs font-mono shadow-lg">
-        <div className="flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-cyan-500/10 border border-cyan-500/30 text-cyan-400">
-            <Rocket className="w-4 h-4 animate-pulse" />
+      <div className="absolute top-2 inset-x-2 sm:top-3 sm:inset-x-3 z-20 flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-3 bg-slate-900/90 backdrop-blur-md px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl border border-cyan-500/30 text-xs font-mono shadow-lg">
+        {/* Row 1: Mission Name & Badges + Camera/Audio */}
+        <div className="flex items-center justify-between gap-2 w-full sm:w-auto">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+            <div className="p-1.5 sm:p-2 rounded-lg bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 shrink-0">
+              <Rocket className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-pulse" />
+            </div>
+            <div className="min-w-0">
+              <div className="font-bold text-slate-100 tracking-wide flex items-center gap-1.5 sm:gap-2 truncate">
+                <span className="truncate">{mission.missionName}</span>
+                <span className="text-[9px] sm:text-[10px] px-1.5 py-0.5 rounded bg-cyan-950 text-cyan-400 border border-cyan-800 shrink-0">
+                  3D
+                </span>
+              </div>
+              <div className="text-[10px] text-slate-400 truncate">
+                {mission.programName} · {mission.year}
+              </div>
+            </div>
           </div>
-          <div>
-            <div className="font-bold text-slate-100 tracking-wide flex items-center gap-2">
-              <span>{mission.missionName}</span>
-              <span className="text-[10px] px-2 py-0.5 rounded bg-cyan-950 text-cyan-400 border border-cyan-800">
-                3D SIMULATOR
-              </span>
+
+          {/* Camera Selector & Audio Controls */}
+          <div className="flex items-center gap-1.5 shrink-0">
+            <div className="flex bg-slate-950/80 p-0.5 rounded-lg border border-slate-700">
+              {(['chase', 'pad', 'cockpit'] as CameraMode[]).map((mode) => (
+                <button
+                  key={mode}
+                  onClick={() => setCameraMode(mode)}
+                  className={`px-1.5 sm:px-2.5 py-0.5 sm:py-1 text-[9px] sm:text-[10px] uppercase font-bold rounded transition-colors ${
+                    cameraMode === mode ? 'bg-cyan-500 text-slate-950 shadow' : 'text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  {mode}
+                </button>
+              ))}
             </div>
-            <div className="text-[11px] text-slate-400">
-              PROGRAM: {mission.programName} // {mission.year}
-            </div>
+
+            <button
+              onClick={() => setSoundEnabled(!soundEnabled)}
+              className="p-1 sm:p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700"
+              title="Toggle Audio"
+            >
+              {soundEnabled ? <Volume2 className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> : <VolumeX className="w-3 h-3 sm:w-3.5 sm:h-3.5" />}
+            </button>
           </div>
         </div>
 
         {/* Dynamic Telemetry Stats */}
-        <div className="flex items-center gap-6 text-slate-200">
+        <div className="grid grid-cols-4 sm:flex sm:items-center gap-2 sm:gap-6 text-slate-200 text-center sm:text-left border-t sm:border-t-0 pt-1.5 sm:pt-0 border-slate-800">
           <div>
-            <div className="text-[10px] text-slate-400 uppercase">Altitude</div>
-            <div className="text-sm font-bold text-cyan-400">{telemetry.altitudeKm.toFixed(1)} km</div>
+            <div className="text-[9px] sm:text-[10px] text-slate-400 uppercase">Alt</div>
+            <div className="text-xs sm:text-sm font-bold text-cyan-400">{telemetry.altitudeKm.toFixed(1)} km</div>
           </div>
           <div>
-            <div className="text-[10px] text-slate-400 uppercase">Velocity</div>
-            <div className="text-sm font-bold text-emerald-400">{telemetry.velocityKms.toFixed(2)} km/s</div>
+            <div className="text-[9px] sm:text-[10px] text-slate-400 uppercase">Vel</div>
+            <div className="text-xs sm:text-sm font-bold text-emerald-400">{telemetry.velocityKms.toFixed(2)} km/s</div>
           </div>
           <div>
-            <div className="text-[10px] text-slate-400 uppercase">Propellant</div>
-            <div className={`text-sm font-bold ${telemetry.propellantPct < 25 ? 'text-rose-400 animate-pulse' : 'text-amber-400'}`}>
+            <div className="text-[9px] sm:text-[10px] text-slate-400 uppercase">Prop</div>
+            <div className={`text-xs sm:text-sm font-bold ${telemetry.propellantPct < 25 ? 'text-rose-400 animate-pulse' : 'text-amber-400'}`}>
               {telemetry.propellantPct.toFixed(0)}%
             </div>
           </div>
           <div>
-            <div className="text-[10px] text-slate-400 uppercase">Timeline</div>
-            <div className="text-sm font-bold text-slate-100">{telemetry.timeRemaining.toFixed(1)}s</div>
+            <div className="text-[9px] sm:text-[10px] text-slate-400 uppercase">Time</div>
+            <div className="text-xs sm:text-sm font-bold text-slate-100">{telemetry.timeRemaining.toFixed(1)}s</div>
           </div>
         </div>
+      </div>
 
-        {/* Camera Selector & Controls */}
-        <div className="flex items-center gap-2">
-          <div className="flex bg-slate-950/80 p-1 rounded-lg border border-slate-700">
-            {(['chase', 'pad', 'cockpit'] as CameraMode[]).map((mode) => (
-              <button
-                key={mode}
-                onClick={() => setCameraMode(mode)}
-                className={`px-2.5 py-1 text-[10px] uppercase font-bold rounded transition-colors ${
-                  cameraMode === mode ? 'bg-cyan-500 text-slate-950 shadow' : 'text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                {mode}
-              </button>
-            ))}
-          </div>
+      {/* FLIGHT ADVISORY CALLOUT BANNER (Positioned below top HUD without collision) */}
+      <div className="absolute top-[82px] sm:top-[74px] left-2 right-2 sm:left-4 sm:right-auto sm:max-w-md z-20 bg-slate-900/90 backdrop-blur-md px-3 py-1.5 sm:py-2 rounded-lg border border-cyan-500/30 text-xs font-mono">
+        <div className="text-[9px] sm:text-[10px] text-cyan-400 font-bold uppercase tracking-wider mb-0.5">Avionics Flight Advisory</div>
+        <div className="text-slate-200 flex items-center gap-2 text-[11px] sm:text-xs">
+          <span className="w-2 h-2 rounded-full animate-ping shrink-0" style={{ backgroundColor: telemetry.statusColor }} />
+          <span className="truncate">{telemetry.statusText}</span>
+        </div>
+      </div>
 
+      {/* MOBILE / ON-SCREEN TOUCH FLIGHT CONTROLS */}
+      <div className="absolute bottom-20 inset-x-3 z-30 flex items-center justify-between sm:hidden pointer-events-none">
+        {/* Gimbal Controls (Left) */}
+        <div className="flex gap-2 pointer-events-auto">
           <button
-            onClick={() => setSoundEnabled(!soundEnabled)}
-            className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700"
-            title="Toggle Audio"
+            onPointerDown={() => setSimKey('a', true)}
+            onPointerUp={() => setSimKey('a', false)}
+            onPointerCancel={() => setSimKey('a', false)}
+            className="w-12 h-12 rounded-xl bg-slate-900/90 border border-cyan-500/40 text-cyan-400 font-bold active:bg-cyan-500/30 text-base flex items-center justify-center shadow-lg active:scale-95"
+            title="Pitch Left"
           >
-            {soundEnabled ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5" />}
+            ◀
+          </button>
+          <button
+            onPointerDown={() => setSimKey('d', true)}
+            onPointerUp={() => setSimKey('d', false)}
+            onPointerCancel={() => setSimKey('d', false)}
+            className="w-12 h-12 rounded-xl bg-slate-900/90 border border-cyan-500/40 text-cyan-400 font-bold active:bg-cyan-500/30 text-base flex items-center justify-center shadow-lg active:scale-95"
+            title="Pitch Right"
+          >
+            ▶
+          </button>
+        </div>
+
+        {/* Thrust & Staging (Right) */}
+        <div className="flex items-center gap-2 pointer-events-auto">
+          {mission.gameType === 'launch' && (
+            <button
+              onClick={handleTouchStaging}
+              className="px-2.5 h-12 rounded-xl bg-amber-500/20 border border-amber-500/50 text-amber-300 font-mono text-[10px] font-bold active:bg-amber-500/40 flex items-center justify-center shadow-lg"
+              title="Stage Separation"
+            >
+              STAGE
+            </button>
+          )}
+          <button
+            onPointerDown={() => setSimKey('w', true)}
+            onPointerUp={() => setSimKey('w', false)}
+            onPointerCancel={() => setSimKey('w', false)}
+            className="w-12 h-12 rounded-xl bg-emerald-500/20 border border-emerald-500/50 text-emerald-400 font-bold active:bg-emerald-500/40 text-base flex items-center justify-center shadow-lg active:scale-95"
+            title="Throttle Up"
+          >
+            ▲
+          </button>
+          <button
+            onPointerDown={() => setSimKey('s', true)}
+            onPointerUp={() => setSimKey('s', false)}
+            onPointerCancel={() => setSimKey('s', false)}
+            className="w-12 h-12 rounded-xl bg-slate-900/90 border border-slate-700 text-slate-300 font-bold active:bg-slate-800 text-base flex items-center justify-center shadow-lg active:scale-95"
+            title="Throttle Down"
+          >
+            ▼
           </button>
         </div>
       </div>
 
-      {/* CENTER CALLOUT / STATUS BANNER */}
-      <div className="absolute top-18 left-4 z-20 max-w-md bg-slate-900/90 backdrop-blur-md px-3.5 py-2 rounded-lg border border-cyan-500/30 text-xs font-mono">
-        <div className="text-[10px] text-cyan-400 font-bold uppercase tracking-wider mb-0.5">Avionics Flight Advisory</div>
-        <div className="text-slate-200 flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full animate-ping" style={{ backgroundColor: telemetry.statusColor }} />
-          <span>{telemetry.statusText}</span>
-        </div>
-      </div>
-
       {/* BOTTOM CONTROL & KEYBOARD GUIDANCE HUD */}
-      <div className="absolute bottom-3 inset-x-3 z-20 flex items-center justify-between gap-4 bg-slate-900/85 backdrop-blur-md px-4 py-3 rounded-xl border border-cyan-500/30 text-xs font-mono shadow-lg">
+      <div className="absolute bottom-2 inset-x-2 sm:bottom-3 sm:inset-x-3 z-20 flex flex-wrap items-center justify-between gap-2 sm:gap-4 bg-slate-900/90 backdrop-blur-md px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl border border-cyan-500/30 text-xs font-mono shadow-lg">
         {/* Throttle Gauge */}
-        <div className="flex items-center gap-3">
-          <div className="w-28 bg-slate-950 h-5 rounded overflow-hidden border border-slate-700 relative">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className="w-20 sm:w-28 bg-slate-950 h-5 rounded overflow-hidden border border-slate-700 relative">
             <div
               className="h-full bg-gradient-to-r from-cyan-500 to-emerald-400 transition-all duration-75"
               style={{ width: `${telemetry.throttle * 100}%` }}
             />
-            <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-slate-100">
+            <span className="absolute inset-0 flex items-center justify-center text-[9px] sm:text-[10px] font-bold text-slate-100">
               THRUST {Math.round(telemetry.throttle * 100)}%
             </span>
           </div>
-          <div className="text-[11px] text-slate-400">
+          <div className="text-[10px] sm:text-[11px] text-slate-400">
             PITCH: <span className="text-cyan-300 font-bold">{telemetry.pitchDeg.toFixed(0)}°</span>
           </div>
         </div>
 
-        {/* Flight Keys Helper */}
-        <div className="flex items-center gap-3 text-slate-300 text-[11px]">
-          <span className="px-2 py-1 bg-slate-800 rounded border border-slate-700 text-cyan-400 font-bold">W / S</span>
-          <span>Throttle Up/Down</span>
-          <span className="px-2 py-1 bg-slate-800 rounded border border-slate-700 text-cyan-400 font-bold">A / D</span>
-          <span>Gimbal Turn</span>
-          <span className="px-2 py-1 bg-slate-800 rounded border border-slate-700 text-amber-400 font-bold">SPACE</span>
-          <span>Stage Separation</span>
+        {/* Flight Keys Helper (Desktop only) */}
+        <div className="hidden md:flex items-center gap-3 text-slate-300 text-[11px]">
+          <span className="px-2 py-0.5 bg-slate-800 rounded border border-slate-700 text-cyan-400 font-bold">W / S</span>
+          <span>Throttle</span>
+          <span className="px-2 py-0.5 bg-slate-800 rounded border border-slate-700 text-cyan-400 font-bold">A / D</span>
+          <span>Gimbal</span>
+          <span className="px-2 py-0.5 bg-slate-800 rounded border border-slate-700 text-amber-400 font-bold">SPACE</span>
+          <span>Stage</span>
         </div>
 
         {/* Exit / Abort Button */}
         <button
           onClick={onExit}
-          className="px-3 py-1.5 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/40 text-xs font-bold transition-colors"
+          className="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/40 text-[11px] sm:text-xs font-bold transition-colors ml-auto sm:ml-0"
         >
           ABORT MISSION
         </button>

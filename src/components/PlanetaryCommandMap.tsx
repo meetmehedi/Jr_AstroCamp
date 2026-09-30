@@ -72,43 +72,43 @@ export const PlanetaryCommandMap: React.FC<PlanetaryCommandMapProps> = ({
         style={{ maxWidth: '1180px', maxHeight: '92vh', overflowY: 'auto' }}
       >
         {/* Header */}
-        <div className="modal-header" style={{ padding: '18px 24px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <div className="brand-logo-glow" style={{ width: '40px', height: '40px' }}>
-              <Compass size={24} className="text-cyan-400" />
+        <div className="modal-header" style={{ padding: 'clamp(12px, 3vw, 20px) clamp(14px, 3vw, 24px)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+            <div className="brand-logo-glow" style={{ width: '36px', height: '36px', flexShrink: 0 }}>
+              <Compass size={22} className="text-cyan-400" />
             </div>
-            <div>
-              <h2 className="modal-title" style={{ fontSize: '1.35rem', letterSpacing: '0.04em' }}>
-                NASA FLIGHT ROSTER & MISSIONS COMMAND
+            <div style={{ minWidth: 0 }}>
+              <h2 className="modal-title" style={{ fontSize: 'clamp(1.05rem, 3.5vw, 1.35rem)', letterSpacing: '0.04em', lineHeight: 1.2 }}>
+                NASA FLIGHT ROSTER & MISSIONS
               </h2>
-              <div style={{ fontSize: '0.8rem', color: '#94a3b8' }}>
-                76 Playable Historic, Active & Flagship NASA Flight Expeditions (1961–2027+)
+              <div style={{ fontSize: '0.75rem', color: '#94a3b8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                76 Playable Historic & Active NASA Missions
               </div>
             </div>
           </div>
-          <button onClick={onClose} className="modal-close-btn" aria-label="Close command map">
+          <button onClick={onClose} className="modal-close-btn" aria-label="Close command map" style={{ flexShrink: 0 }}>
             <X size={20} />
           </button>
         </div>
 
         {/* Toolbar: Search & Destination Filter */}
         <div style={{
-          padding: '12px 24px',
+          padding: '10px clamp(14px, 3vw, 24px)',
           display: 'flex',
           flexWrap: 'wrap',
-          gap: '12px',
+          gap: '10px',
           alignItems: 'center',
           backgroundColor: 'rgba(15, 23, 42, 0.75)',
           borderBottom: '1px solid rgba(255,255,255,0.08)'
         }}>
           {/* Search Box */}
-          <div style={{ position: 'relative', flex: '1', minWidth: '260px' }}>
+          <div style={{ position: 'relative', flex: '1', minWidth: 'min(100%, 240px)' }}>
             <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#64748b' }} />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search by mission name, astronaut, hazard, or protocol (e.g. Apollo 11, Glenn, EVA)..."
+              placeholder="Search missions, targets, astronauts..."
               style={{
                 width: '100%',
                 background: 'rgba(30, 41, 59, 0.8)',
@@ -133,22 +133,23 @@ export const PlanetaryCommandMap: React.FC<PlanetaryCommandMapProps> = ({
               padding: '8px 12px',
               color: '#e2e8f0',
               fontSize: '0.8rem',
-              cursor: 'pointer'
+              cursor: 'pointer',
+              maxWidth: '100%'
             }}
           >
-            <option value="ALL">All Flight Destinations</option>
+            <option value="ALL">All Destinations</option>
             <option value="MOON">Moon (Apollo / Artemis)</option>
-            <option value="MARS">Mars (Viking / Curiosity / Perseverance)</option>
-            <option value="EARTH_ORBIT">Low Earth Orbit (Mercury / Gemini / Shuttle / ISS)</option>
-            <option value="EUROPA">Europa (Subsurface Ocean)</option>
-            <option value="TITAN">Titan (Atmospheric Dunes)</option>
-            <option value="ASTEROID">Asteroid Belt & Planetary Defense</option>
-            <option value="LAGRANGE">Deep Space & Lagrange L2</option>
-            <option value="OUTER_PLANETS">Outer Planets & Interstellar</option>
+            <option value="MARS">Mars (Viking / Curiosity)</option>
+            <option value="EARTH_ORBIT">Low Earth Orbit (Shuttle/ISS)</option>
+            <option value="EUROPA">Europa (Ocean World)</option>
+            <option value="TITAN">Titan (Dunes & Lakes)</option>
+            <option value="ASTEROID">Asteroid Belt</option>
+            <option value="LAGRANGE">Deep Space & L2</option>
+            <option value="OUTER_PLANETS">Outer Solar System</option>
           </select>
 
-          <div style={{ fontSize: '0.78rem', color: '#94a3b8', fontWeight: 600 }}>
-            Showing <strong style={{ color: '#38bdf8' }}>{filteredMissions.length}</strong> of {NASA_MISSIONS.length}
+          <div style={{ fontSize: '0.78rem', color: '#94a3b8', fontWeight: 600, marginLeft: 'auto' }}>
+            Showing <strong style={{ color: '#38bdf8' }}>{filteredMissions.length}</strong>
           </div>
         </div>
 
@@ -156,7 +157,7 @@ export const PlanetaryCommandMap: React.FC<PlanetaryCommandMapProps> = ({
         <div style={{
           display: 'flex',
           gap: '8px',
-          padding: '12px 24px',
+          padding: '10px clamp(14px, 3vw, 24px)',
           borderBottom: '1px solid rgba(255,255,255,0.08)',
           overflowX: 'auto',
           backgroundColor: 'rgba(10, 15, 26, 0.65)'
@@ -168,9 +169,9 @@ export const PlanetaryCommandMap: React.FC<PlanetaryCommandMapProps> = ({
                 key={era.id}
                 onClick={() => { setSelectedEra(era.id); soundFx.playClick(700); }}
                 style={{
-                  padding: '7px 14px',
+                  padding: '6px 12px',
                   borderRadius: '8px',
-                  fontSize: '0.78rem',
+                  fontSize: '0.75rem',
                   fontWeight: 600,
                   border: isSelected ? '1px solid #38bdf8' : '1px solid rgba(255,255,255,0.1)',
                   backgroundColor: isSelected ? 'rgba(56, 189, 248, 0.18)' : 'rgba(15, 23, 42, 0.6)',
@@ -180,7 +181,8 @@ export const PlanetaryCommandMap: React.FC<PlanetaryCommandMapProps> = ({
                   alignItems: 'center',
                   gap: '6px',
                   whiteSpace: 'nowrap',
-                  transition: 'all 0.15s ease'
+                  transition: 'all 0.15s ease',
+                  flexShrink: 0
                 }}
               >
                 <span>{era.emoji}</span>
@@ -202,10 +204,10 @@ export const PlanetaryCommandMap: React.FC<PlanetaryCommandMapProps> = ({
 
         {/* Missions Grid */}
         <div style={{
-          padding: '24px',
+          padding: 'clamp(14px, 3vw, 24px)',
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))',
-          gap: '18px'
+          gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 280px), 1fr))',
+          gap: '14px'
         }}>
           {filteredMissions.map((mission) => {
             const isActive = activeMissionId === mission.id;

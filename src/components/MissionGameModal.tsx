@@ -144,26 +144,26 @@ export const MissionGameModal: React.FC<MissionGameModalProps> = ({
     <div className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
       <div className="relative w-full max-w-5xl bg-slate-900 border border-cyan-500/30 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[96vh]">
         {/* Top Header Bar */}
-        <div className="px-6 py-4 bg-slate-900/90 border-b border-slate-800 flex items-center justify-between flex-shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-slate-800 rounded-lg border border-slate-700">
+        <div className="px-4 sm:px-6 py-3 sm:py-4 bg-slate-900/90 border-b border-slate-800 flex items-center justify-between gap-2 flex-shrink-0">
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+            <div className="p-2 bg-slate-800 rounded-lg border border-slate-700 shrink-0">
               {getGameTypeIcon()}
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-mono text-cyan-400 tracking-wider">
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="text-[11px] sm:text-xs font-mono text-cyan-400 tracking-wider">
                   MISSION #{missionIndex + 1} OF 76 • {mission.year}
                 </span>
-                <span className="text-[11px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700 font-mono">
+                <span className="text-[10px] sm:text-[11px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700 font-mono truncate max-w-[140px]">
                   {mission.programName}
                 </span>
                 {isAlreadyCompleted && (
-                  <span className="text-[11px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
+                  <span className="text-[10px] sm:text-[11px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
                     <CheckCircle2 className="w-3 h-3" /> Completed
                   </span>
                 )}
               </div>
-              <h2 className="text-lg font-bold text-white tracking-wide">{mission.missionName}</h2>
+              <h2 className="text-base sm:text-lg font-bold text-white tracking-wide truncate">{mission.missionName}</h2>
             </div>
           </div>
 

@@ -488,84 +488,77 @@ export const App: React.FC = () => {
         />
 
         {/* Current Mission Banner */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px',
-            padding: '6px 16px',
-            background: 'linear-gradient(90deg, rgba(139,92,246,0.15), rgba(16,185,129,0.1))',
-            borderBottom: '1px solid rgba(139,92,246,0.25)',
-            fontSize: '0.78rem',
-            color: '#c4b5fd'
-          }}
-        >
-          <Rocket size={13} className="text-violet-400" />
-          <span style={{ fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', color: '#a78bfa' }}>
-            Active Mission:
-          </span>
-          <span style={{ color: '#e2e8f0', fontWeight: 600 }}>{currentMission.name}</span>
-          <span style={{ color: '#64748b' }}>·</span>
-          <span style={{ color: '#94a3b8' }}>{currentMission.destinationName} · {currentMission.coordinates}</span>
-
-          {/* Cinema Theater vs Tactical Bridge Viewport Toggle */}
-          <div style={{ display: 'flex', gap: '4px', background: 'rgba(15,23,42,0.7)', padding: '2px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.1)', marginLeft: 'auto' }}>
-            <button
-              onClick={() => { setIsTheaterMode(true); soundFx.playClick(900); }}
-              style={{
-                padding: '3px 10px',
-                fontSize: '0.72rem',
-                fontWeight: 700,
-                borderRadius: '4px',
-                border: 'none',
-                cursor: 'pointer',
-                backgroundColor: isTheaterMode ? '#38bdf8' : 'transparent',
-                color: isTheaterMode ? '#070a0e' : '#94a3b8',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
-                transition: 'all 0.2s',
-              }}
-            >
-              <span>🎬 Cinema Theater</span>
-            </button>
-            <button
-              onClick={() => { setIsTheaterMode(false); soundFx.playClick(800); }}
-              style={{
-                padding: '3px 10px',
-                fontSize: '0.72rem',
-                fontWeight: 700,
-                borderRadius: '4px',
-                border: 'none',
-                cursor: 'pointer',
-                backgroundColor: !isTheaterMode ? '#38bdf8' : 'transparent',
-                color: !isTheaterMode ? '#070a0e' : '#94a3b8',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
-                transition: 'all 0.2s',
-              }}
-            >
-              <span>🛰️ Tactical Bridge</span>
-            </button>
+        <div className="mission-banner-bar">
+          <div className="mission-banner-info">
+            <Rocket size={13} className="text-violet-400 shrink-0" />
+            <span style={{ fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', color: '#a78bfa' }}>
+              Active Mission:
+            </span>
+            <span style={{ color: '#e2e8f0', fontWeight: 600 }}>{currentMission.name}</span>
+            <span style={{ color: '#64748b' }}>·</span>
+            <span style={{ color: '#94a3b8' }}>{currentMission.destinationName} · {currentMission.coordinates}</span>
           </div>
 
-          <button
-            onClick={() => setIsPlanetaryMapOpen(true)}
-            style={{
-              padding: '3px 10px',
-              background: 'rgba(139,92,246,0.2)',
-              border: '1px solid rgba(139,92,246,0.4)',
-              borderRadius: '4px',
-              color: '#c4b5fd',
-              fontSize: '0.72rem',
-              cursor: 'pointer',
-              fontWeight: 600,
-              letterSpacing: '0.05em'
-            }}
-          >
-            SWITCH MISSION
-          </button>
+          <div className="mission-banner-controls">
+            {/* Cinema Theater vs Tactical Bridge Viewport Toggle */}
+            <div style={{ display: 'flex', gap: '4px', background: 'rgba(15,23,42,0.7)', padding: '2px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.1)' }}>
+              <button
+                onClick={() => { setIsTheaterMode(true); soundFx.playClick(900); }}
+                style={{
+                  padding: '3px 10px',
+                  fontSize: '0.72rem',
+                  fontWeight: 700,
+                  borderRadius: '4px',
+                  border: 'none',
+                  cursor: 'pointer',
+                  backgroundColor: isTheaterMode ? '#38bdf8' : 'transparent',
+                  color: isTheaterMode ? '#070a0e' : '#94a3b8',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  transition: 'all 0.2s',
+                }}
+              >
+                <span>🎬 Cinema Theater</span>
+              </button>
+              <button
+                onClick={() => { setIsTheaterMode(false); soundFx.playClick(800); }}
+                style={{
+                  padding: '3px 10px',
+                  fontSize: '0.72rem',
+                  fontWeight: 700,
+                  borderRadius: '4px',
+                  border: 'none',
+                  cursor: 'pointer',
+                  backgroundColor: !isTheaterMode ? '#38bdf8' : 'transparent',
+                  color: !isTheaterMode ? '#070a0e' : '#94a3b8',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  transition: 'all 0.2s',
+                }}
+              >
+                <span>🛰️ Tactical Bridge</span>
+              </button>
+            </div>
+
+            <button
+              onClick={() => setIsPlanetaryMapOpen(true)}
+              style={{
+                padding: '4px 10px',
+                background: 'rgba(139,92,246,0.2)',
+                border: '1px solid rgba(139,92,246,0.4)',
+                borderRadius: '6px',
+                color: '#c4b5fd',
+                fontSize: '0.72rem',
+                cursor: 'pointer',
+                fontWeight: 600,
+                letterSpacing: '0.05em'
+              }}
+            >
+              SWITCH MISSION
+            </button>
+          </div>
         </div>
 
         {/* ── CINEMA THEATER MODE (Full Screen Narrative Immersion) ── */}
@@ -602,7 +595,7 @@ export const App: React.FC = () => {
                     className="choices-list"
                     style={{
                       display: 'grid',
-                      gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+                      gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 260px), 1fr))',
                       gap: '12px',
                     }}
                   >
@@ -635,7 +628,7 @@ export const App: React.FC = () => {
             )}
 
             {/* 2. Tactical Sensor Deck & Scientific Citation Array */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '20px' }}>
+            <div className="theater-bottom-grid">
               {/* Outpost Viewport */}
               <div className="panel-box">
                 <div className="panel-box-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

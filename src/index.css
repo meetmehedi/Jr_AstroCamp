@@ -2365,16 +2365,59 @@ body {
 .mobile-menu-icon { display: flex; align-items: center; flex-shrink: 0; }
 .mobile-menu-label { font-size: 0.88rem; font-weight: 500; color: #e2e8f0; }
 
-/* ── LANDING PAGE MOBILE ── */
-.landing-hero-headline { font-size: clamp(2rem, 8vw, 4.8rem); }
-.landing-hero-tagline  { font-size: clamp(0.9rem, 3vw, 1.1rem); }
-.landing-features-grid { grid-template-columns: 1fr; }
-.landing-steps-grid    { grid-template-columns: 1fr; }
-.landing-formats-grid  { grid-template-columns: 1fr; }
-.landing-team-grid     { grid-template-columns: repeat(2, 1fr); }
+/* ── THEATER BOTTOM GRID ── */
+.theater-bottom-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 20px;
+}
+
+@media (max-width: 960px) {
+  .theater-bottom-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+}
+
+/* ── MISSION BANNER BAR ── */
+.mission-banner-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px;
+  background: linear-gradient(90deg, rgba(139,92,246,0.15), rgba(16,185,129,0.1));
+  border-bottom: 1px solid rgba(139,92,246,0.25);
+  font-size: 0.78rem;
+  color: #c4b5fd;
+  flex-wrap: wrap;
+}
+
+.mission-banner-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.mission-banner-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  flex-wrap: wrap;
+}
 
 /* ── MAIN CONTENT MOBILE ── */
 @media (max-width: 768px) {
+  /* Landing page mobile grid adjustments */
+  .landing-hero-headline { font-size: clamp(2rem, 8vw, 4.8rem); }
+  .landing-hero-tagline  { font-size: clamp(0.9rem, 3vw, 1.1rem); }
+  .landing-features-grid { grid-template-columns: 1fr; }
+  .landing-steps-grid    { grid-template-columns: 1fr; }
+  .landing-formats-grid  { grid-template-columns: 1fr; }
+  .landing-team-grid     { grid-template-columns: repeat(2, 1fr); }
+
   /* Navbar */
   .main-nav {
     padding: 10px 14px;
@@ -2392,7 +2435,7 @@ body {
 
   /* Content layout */
   .main-content-layout {
-    padding: 12px 12px;
+    padding: 10px 12px;
     gap: 12px;
   }
 
@@ -2413,21 +2456,47 @@ body {
   .hud-header {
     flex-direction: column;
     align-items: flex-start;
-    gap: 8px;
+    gap: 10px;
   }
 
-  /* Resource meter cards: smaller */
-  .meter-card { padding: 8px 10px; }
-  .meter-header { font-size: 10px; }
-  .meter-val { font-size: 11px; }
+  .tier-selector-pills {
+    width: 100%;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    scrollbar-width: none;
+  }
 
-  /* Mission banner: stack horizontally on mobile */
-  .mission-banner-mobile {
-    flex-direction: column !important;
-    align-items: flex-start !important;
-    gap: 8px !important;
-    padding: 8px 12px !important;
-    font-size: 0.72rem !important;
+  /* Resource meter cards: smaller, prevent text overlap */
+  .meter-card { padding: 8px 10px; min-width: 0; }
+  .meter-header {
+    font-size: 10px;
+    gap: 4px;
+    flex-wrap: wrap;
+  }
+  .meter-label {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .meter-val {
+    font-size: 11px;
+    white-space: nowrap;
+    margin-left: auto;
+  }
+
+  /* Mission banner: stack cleanly on mobile */
+  .mission-banner-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    padding: 10px 12px;
+  }
+
+  .mission-banner-controls {
+    margin-left: 0;
+    justify-content: space-between;
+    width: 100%;
   }
 
   .viewport-toggle-mobile { margin-left: 0 !important; }
@@ -2436,7 +2505,7 @@ body {
   .event-dilemma-card { padding: 14px; }
   .event-title { font-size: 16px; }
 
-  /* 3D Simulator: make shorter on phones */
+  /* 3D Simulator: make responsive height on phones */
   .three-sim-container { height: 380px !important; }
 
   /* ThreeMissionSimulator responsive HUD: wrap better */
