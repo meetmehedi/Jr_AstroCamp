@@ -36,14 +36,14 @@ export const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
 
           <div style={{ fontSize:'2.5rem', marginBottom:'12px' }}>🚀</div>
           <div className="about-team-name">Team Mysterio · NASA Space Apps Challenge 2026</div>
-          <h2 className="about-app-title">Astro Camp</h2>
+          <h2 className="about-app-title">Jr_AstroCamp</h2>
           <p style={{ fontSize:'0.8rem', color:'#7c3aed', fontWeight:600, letterSpacing:'0.08em', textTransform:'uppercase', marginBottom:'20px' }}>
-            Junior Astronaut Mission Trainer
+            Fly · Learn · Explore
           </p>
           <p className="about-story">
             We're six problem-solvers who believe space education shouldn't feel like a textbook you're forced to finish.
-            We're an AI automation engineer, a data scientist, an ML engineer, a developer, a researcher, and a UI/UX designer —
-            brought together by one idea: <strong style={{ color:'#e2e8f0' }}>kids learn best when they're having fun, and every kid learns differently.</strong>
+            We're an AI automation engineer, a data scientist, an ML engineer, a full-stack developer, a researcher, and a UI/UX designer —
+            brought together by one shared memory: <strong style={{ color:'#e2e8f0' }}>looking up at the night sky and wondering what it would take to get up there.</strong>
           </p>
         </div>
 
@@ -52,12 +52,12 @@ export const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
 
           {/* The Problem */}
           <div>
-            <div className="about-section-title">The Problem We Set Out to Solve</div>
+            <div className="about-section-title">The Challenge: Turn Curious Kids into Mission-Ready Thinkers</div>
             <p style={{ fontSize:'0.88rem', color:'#94a3b8', lineHeight:1.8 }}>
-              Space STEM content usually fails in one of two ways. It's either so oversimplified that it hides the real
-              engineering trade-offs, or so complex that young learners tune out. And even when it's done well, it's
-              often delivered in just one format. But some students learn by playing, some by reading a comic, some by
-              listening, and some by scribbling their own notes. We wanted to build something for all of them.
+              In a universe where the next generation of astronauts is sitting in classrooms right now, Jr_AstroCamp is Team Mysterio's answer to a question every space agency eventually asks: <strong style={{ color:'#e2e8f0' }}>how do you turn a curious kid into a mission-ready thinker?</strong>
+            </p>
+            <p style={{ fontSize:'0.88rem', color:'#94a3b8', lineHeight:1.8, marginTop:'10px' }}>
+              Most STEM platforms either oversimplify the science into cartoons or bury it in technical jargon. Worse, most tools deliver everything in a single format, quietly leaving most students behind without a safe way to fail, learn, and retry.
             </p>
           </div>
 
@@ -65,16 +65,14 @@ export const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
           <div>
             <div className="about-section-title">What We Built</div>
             <p style={{ fontSize:'0.88rem', color:'#94a3b8', lineHeight:1.8, marginBottom:'12px' }}>
-              So we built <strong style={{ color:'#c4b5fd' }}>Astro Camp</strong>, an edtech learning platform where young
-              explorers train to become astronauts. At its heart is our{' '}
-              <strong style={{ color:'#38bdf8' }}>Junior Astronaut Mission Trainer</strong> — a game where students run their
-              own lunar or Martian outpost, balancing life support, radiation shielding, power, and food production, and feel
-              the consequences of every decision.
+              So we built <strong style={{ color:'#c4b5fd' }}>Jr_AstroCamp</strong>, an ed-tech learning platform where students
+              don't just read about real NASA missions — they fly them. At its heart is a 60 FPS flight simulator featuring{' '}
+              <strong style={{ color:'#38bdf8' }}>76 real, historical NASA missions</strong> across 6 flight disciplines (Launch, Docking, Lander, Rover, Telescope, Deep Space),
+              plus an Outpost command simulator.
             </p>
             <p style={{ fontSize:'0.88rem', color:'#94a3b8', lineHeight:1.8 }}>
-              Around it, Astro Camp offers interactive games, handwritten-style notebooks, comic books, audio lessons,
-              and videos — all built on real NASA data — so students can dive into the same ideas in whichever way
-              clicks for them.
+              Around every mission sits our multi-format Learning Layer: interactive mini-games, handwritten-style notebooks,
+              comics, audio lessons, and archival NASA reels — four doors into the same concept so every student succeeds.
             </p>
           </div>
 
@@ -104,9 +102,9 @@ export const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
 
           {/* Motto */}
           <div className="about-motto-box">
-            <div className="about-motto">One Team. One Sky. Infinite Possibilities.</div>
+            <div className="about-motto">Fly. Learn. Explore.</div>
             <p className="about-motto-sub">
-              🌕 Outpost Command · Astro Camp · Team Mysterio · NASA Space Apps Challenge 2026
+              🚀 Jr_AstroCamp · Team Mysterio · NASA International Space Apps Challenge 2026
             </p>
           </div>
 

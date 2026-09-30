@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import * as THREE from 'three';
+import confetti from 'canvas-confetti';
 import type { ResourceState, OutpostModules, ChoiceOption } from '../types/game';
 import type { NasaMission } from '../data/nasaMissions';
 import { soundFx } from '../utils/audioEffects';
@@ -244,6 +245,19 @@ export const Outpost3DView: React.FC<Outpost3DViewProps> = ({
   const [completedZones, setCompletedZones] = useState<Set<string>>(new Set()); // zones that have been used
   const lastZoneCheckRef = useRef<string | null>(null);
 
+  // ── PUBG / FREE FIRE TACTICAL TPS STATE ──
+  const [isPointerLocked, setIsPointerLocked] = useState(false);
+  const [isAiming, setIsAiming] = useState(false);
+  const [activeTool, setActiveTool] = useState<'LASER' | 'SCANNER' | 'FLAG'>('LASER');
+  const [jetpackFuel, setJetpackFuel] = useState(100);
+  const [lootCount, setLootCount] = useState(0);
+  const [hitmarker, setHitmarker] = useState(false);
+  const [targetRange, setTargetRange] = useState<number | null>(null);
+  const [actionFeed, setActionFeed] = useState<Array<{ id: number; text: string; type: 'loot' | 'scan' | 'flag' | 'info' }>>([
+    { id: 1, text: 'TACTICAL RADAR & EVA SUIT ONLINE', type: 'info' },
+    { id: 2, text: 'MINING LASER EQUIPPED [SLOT 1]', type: 'info' }
+  ]);
+
   // Joystick state for touch/drag control
   const joystickRef = useRef<{ active: boolean; dx: number; dy: number }>({ active: false, dx: 0, dy: 0 });
   const [joystickThumbPos, setJoystickThumbPos] = useState({ x: 0, y: 0 });
@@ -265,6 +279,15 @@ export const Outpost3DView: React.FC<Outpost3DViewProps> = ({
   const headlampRef = useRef<THREE.SpotLight | null>(null);
   const solarPanelsRef = useRef<THREE.Group | null>(null);
   const earthMeshRef = useRef<THREE.Mesh | THREE.Group | null>(null);
+
+  // Tactical PUBG / Free Fire 3D refs
+  const weaponMeshRef = useRef<THREE.Group | null>(null);
+  const laserBeamRef = useRef<THREE.Line | null>(null);
+  const sparkParticlesRef = useRef<THREE.Points | null>(null);
+  const sonarRingRef = useRef<THREE.Mesh | null>(null);
+  const jetpackFlamesRef = useRef<THREE.Mesh[]>([]);
+  const crystalsRef = useRef<Array<{ id: string; mesh: THREE.Group; hp: number; maxHp: number; type: string; pos: THREE.Vector3; name: string }>>([]);
+  const isRightMouseDownRef = useRef(false);
 
   // Player physics state
   const playerPosRef = useRef(new THREE.Vector3(0, 0.4, 12));
@@ -311,10 +334,43 @@ export const Outpost3DView: React.FC<Outpost3DViewProps> = ({
       keysRef.current[e.code] = true;
       if (e.key) keysRef.current[e.key.toLowerCase()] = true;
 
-      // Space: Jump
+      // ── PUBG / FREE FIRE TACTICAL HOTKEYS ──
+      // [1] Mining Laser
+      if (e.code === 'Digit1' || e.key === '1') {
+        setActiveTool('LASER');
+        soundFx.playClick(950);
+        pushActionFeed('SLOT [1]: PLASMA MINING LASER ARMED', 'info');
+      }
+      // [2] Sonar Scanner
+      if (e.code === 'Digit2' || e.key === '2') {
+        setActiveTool('SCANNER');
+        soundFx.playClick(1050);
+        pushActionFeed('SLOT [2]: TERRAIN RADAR SCANNER ARMED', 'scan');
+      }
+      // [3] NASA Flag
+      if (e.code === 'Digit3' || e.key === '3') {
+        setActiveTool('FLAG');
+        soundFx.playClick(1150);
+        pushActionFeed('SLOT [3]: NASA MISSION FLAG ARMED', 'flag');
+      }
+      // [R] Toggle Aim Down Sights (ADS)
+      if (e.code === 'KeyR' || e.key === 'r' || e.key === 'R') {
+        setIsAiming(prev => {
+          const next = !prev;
+          soundFx.playClick(next ? 1200 : 700);
+          return next;
+        });
+      }
+      // [Q] Quick Radar Scan
+      if (e.code === 'KeyQ' || e.key === 'q' || e.key === 'Q') {
+        soundFx.playScan();
+        pushActionFeed('📡 Quick Sonar Pulse Dispatched', 'scan');
+      }
+
+      // Space: Jump & Jetpack
       if (e.code === 'Space' || e.key === ' ') {
         if (isGroundedRef.current) {
-          playerVelRef.current.y = 5.2; // floaty lunar leap
+          playerVelRef.current.y = 5.4; // floaty lunar leap
           isGroundedRef.current = false;
           soundFx.playThruster();
         }
@@ -356,6 +412,141 @@ export const Outpost3DView: React.FC<Outpost3DViewProps> = ({
       window.removeEventListener('keyup', handleKeyUp);
     };
   }, []);
+
+  const pushActionFeed = useCallback((text: string, type: 'loot' | 'scan' | 'flag' | 'info' = 'info') => {
+    setActionFeed(prev => [{ id: Date.now() + Math.random(), text, type }, ...prev.slice(0, 4)]);
+  }, []);
+
+  // ── FIRE ACTIVE TOOL (LEFT CLICK ACTION) ──
+  const fireActiveTool = useCallback(() => {
+    if (cameraMode !== 'TPS_ASTRONAUT' || !sceneRef.current || !cameraRef.current) return;
+    const scene = sceneRef.current;
+    const camera = cameraRef.current;
+
+    if (activeTool === 'LASER') {
+      soundFx.playMiningLaser();
+      const raycaster = new THREE.Raycaster();
+      raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
+
+      const intersects = raycaster.intersectObjects(scene.children, true);
+      let hitPoint = new THREE.Vector3().addVectors(camera.position, raycaster.ray.direction.clone().multiplyScalar(35));
+
+      if (intersects.length > 0) {
+        const hit = intersects[0];
+        hitPoint = hit.point;
+
+        for (let i = 0; i < crystalsRef.current.length; i++) {
+          const c = crystalsRef.current[i];
+          if (c.hp > 0 && hit.point.distanceTo(c.pos) < 2.8) {
+            c.hp -= 1;
+            setHitmarker(true);
+            setTimeout(() => setHitmarker(false), 140);
+
+            c.mesh.traverse((child) => {
+              if ((child as THREE.Mesh).isMesh && (child as THREE.Mesh).material) {
+                const mat = (child as THREE.Mesh).material as THREE.MeshStandardMaterial;
+                if (mat.emissive) mat.emissiveIntensity = 2.4;
+                setTimeout(() => { if (mat.emissive) mat.emissiveIntensity = 0.6; }, 120);
+              }
+            });
+
+            if (c.hp <= 0) {
+              soundFx.playLootPickup();
+              scene.remove(c.mesh);
+              setLootCount(prev => prev + 1);
+              pushActionFeed(`💎 ${c.name} Extracted (+25 Science)`, 'loot');
+            } else {
+              pushActionFeed(`🎯 Mining Hit: ${c.name} [${c.hp}/${c.maxHp} HP]`, 'info');
+            }
+            break;
+          }
+        }
+      }
+
+      // Flash laser line
+      if (laserBeamRef.current && astronautRef.current) {
+        const startPoint = new THREE.Vector3().copy(playerPosRef.current);
+        startPoint.y += 1.3;
+        startPoint.x += Math.cos(cameraYawRef.current) * 0.45;
+        startPoint.z -= Math.sin(cameraYawRef.current) * 0.45;
+
+        const positions = laserBeamRef.current.geometry.attributes.position as THREE.BufferAttribute;
+        positions.setXYZ(0, startPoint.x, startPoint.y, startPoint.z);
+        positions.setXYZ(1, hitPoint.x, hitPoint.y, hitPoint.z);
+        positions.needsUpdate = true;
+        (laserBeamRef.current.material as THREE.LineBasicMaterial).opacity = 0.95;
+        setTimeout(() => {
+          if (laserBeamRef.current) {
+            (laserBeamRef.current.material as THREE.LineBasicMaterial).opacity = 0;
+          }
+        }, 90);
+      }
+
+      // Sparks
+      if (sparkParticlesRef.current) {
+        const pAttr = sparkParticlesRef.current.geometry.attributes.position as THREE.BufferAttribute;
+        for (let i = 0; i < 40; i++) {
+          pAttr.setXYZ(
+            i,
+            hitPoint.x + (Math.random() - 0.5) * 0.8,
+            hitPoint.y + Math.random() * 0.8,
+            hitPoint.z + (Math.random() - 0.5) * 0.8
+          );
+        }
+        pAttr.needsUpdate = true;
+        (sparkParticlesRef.current.material as THREE.PointsMaterial).opacity = 1.0;
+        setTimeout(() => {
+          if (sparkParticlesRef.current) {
+            (sparkParticlesRef.current.material as THREE.PointsMaterial).opacity = 0;
+          }
+        }, 160);
+      }
+    } else if (activeTool === 'SCANNER') {
+      soundFx.playScan();
+      if (sonarRingRef.current) {
+        sonarRingRef.current.position.copy(playerPosRef.current);
+        sonarRingRef.current.position.y += 0.2;
+        sonarRingRef.current.scale.set(1, 1, 1);
+        (sonarRingRef.current.material as THREE.MeshBasicMaterial).opacity = 0.85;
+      }
+      pushActionFeed('📡 Terrain Radar Sweep: Outpost & Mineral Grid Tagged', 'scan');
+    } else if (activeTool === 'FLAG') {
+      soundFx.playFlagPlant();
+      const flagGroup = new THREE.Group();
+      flagGroup.position.copy(playerPosRef.current);
+      const pole = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.04, 0.04, 2.6, 8),
+        new THREE.MeshStandardMaterial({ color: 0xe2e8f0, metalness: 0.9, roughness: 0.2 })
+      );
+      pole.position.y = 1.3;
+      flagGroup.add(pole);
+
+      const flagCanvas = document.createElement('canvas');
+      flagCanvas.width = 256; flagCanvas.height = 160;
+      const fCtx = flagCanvas.getContext('2d')!;
+      fCtx.fillStyle = '#1e3a8a';
+      fCtx.fillRect(0, 0, 256, 160);
+      fCtx.fillStyle = '#dc2626';
+      fCtx.beginPath();
+      fCtx.arc(128, 80, 48, 0, Math.PI * 2);
+      fCtx.fill();
+      fCtx.fillStyle = '#ffffff';
+      fCtx.font = 'bold 34px monospace';
+      fCtx.textAlign = 'center';
+      fCtx.fillText('NASA', 128, 92);
+      const flagTex = new THREE.CanvasTexture(flagCanvas);
+      const flagMesh = new THREE.Mesh(
+        new THREE.PlaneGeometry(1.2, 0.75),
+        new THREE.MeshStandardMaterial({ map: flagTex, side: THREE.DoubleSide })
+      );
+      flagMesh.position.set(0.62, 2.1, 0);
+      flagGroup.add(flagMesh);
+      scene.add(flagGroup);
+
+      confetti({ particleCount: 65, spread: 75, origin: { y: 0.55 } });
+      pushActionFeed('🚩 NASA Mission Flag Planted on Shackleton Crater!', 'flag');
+    }
+  }, [activeTool, cameraMode, pushActionFeed]);
 
   // ── AMONG US TASK INTERACTION HANDLER ──
   const triggerInteraction = useCallback(() => {
@@ -541,6 +732,83 @@ export const Outpost3DView: React.FC<Outpost3DViewProps> = ({
     scene.add(earthGroup);
     earthMeshRef.current = earthMesh;
 
+    // ── MINEABLE CELESTIAL CRYSTAL FORMATIONS ──
+    const crystalGeo = new THREE.OctahedronGeometry(0.7, 0);
+    const crystalDefs = [
+      { type: 'he3', color: 0x38bdf8, emissive: 0x0284c7, name: 'Helium-3 Fusion Node' },
+      { type: 'ice', color: 0x67e8f9, emissive: 0x0891b2, name: 'Lunar Water Ice Core' },
+      { type: 'titanium', color: 0xf59e0b, emissive: 0xb45309, name: 'Titanium Regolith Ore' },
+    ];
+    crystalsRef.current = [];
+    for (let i = 0; i < 14; i++) {
+      const def = crystalDefs[i % crystalDefs.length];
+      const crystalGroup = new THREE.Group();
+      const angle = (i / 14) * Math.PI * 2 + (Math.random() - 0.5) * 0.4;
+      const r = 11 + (i % 4) * 6 + Math.random() * 4;
+      const cx = Math.cos(angle) * r;
+      const cz = Math.sin(angle) * r;
+      const cy = getTerrainHeight(cx, cz) + 0.4;
+      crystalGroup.position.set(cx, cy, cz);
+
+      const cMat = new THREE.MeshStandardMaterial({
+        color: def.color,
+        emissive: def.emissive,
+        emissiveIntensity: 0.65,
+        roughness: 0.18,
+        metalness: 0.9,
+      });
+
+      for (let k = 0; k < 3; k++) {
+        const shard = new THREE.Mesh(crystalGeo, cMat);
+        shard.scale.set(0.5 + Math.random() * 0.4, 0.9 + Math.random() * 0.8, 0.5 + Math.random() * 0.4);
+        shard.position.set((k - 1) * 0.35, Math.random() * 0.3, (k === 1 ? 0.25 : -0.2));
+        shard.rotation.set(Math.random() * 0.4, Math.random() * Math.PI, Math.random() * 0.4);
+        shard.castShadow = true;
+        crystalGroup.add(shard);
+      }
+
+      const pLight = new THREE.PointLight(def.color, 0.9, 5);
+      pLight.position.y = 0.8;
+      crystalGroup.add(pLight);
+
+      scene.add(crystalGroup);
+      crystalsRef.current.push({
+        id: `crystal_${i}`,
+        mesh: crystalGroup,
+        hp: 3,
+        maxHp: 3,
+        type: def.type,
+        pos: new THREE.Vector3(cx, cy, cz),
+        name: def.name,
+      });
+    }
+
+    // Laser Beam Line
+    const laserGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0, 0)]);
+    const laserMat = new THREE.LineBasicMaterial({ color: 0x38bdf8, linewidth: 3, transparent: true, opacity: 0 });
+    const laserLine = new THREE.Line(laserGeo, laserMat);
+    scene.add(laserLine);
+    laserBeamRef.current = laserLine;
+
+    // Sparks Points
+    const sparkCount = 40;
+    const sparkGeo = new THREE.BufferGeometry();
+    const sparkPos = new Float32Array(sparkCount * 3);
+    sparkGeo.setAttribute('position', new THREE.BufferAttribute(sparkPos, 3));
+    const sparkMat = new THREE.PointsMaterial({ color: 0x38bdf8, size: 0.35, transparent: true, opacity: 0 });
+    const sparkPoints = new THREE.Points(sparkGeo, sparkMat);
+    scene.add(sparkPoints);
+    sparkParticlesRef.current = sparkPoints;
+
+    // Sonar Wave Ring
+    const sonarGeo = new THREE.RingGeometry(0.5, 1.4, 32);
+    sonarGeo.rotateX(-Math.PI / 2);
+    const sonarMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8, side: THREE.DoubleSide, transparent: true, opacity: 0 });
+    const sonarRing = new THREE.Mesh(sonarGeo, sonarMat);
+    sonarRing.position.y = 0.15;
+    scene.add(sonarRing);
+    sonarRingRef.current = sonarRing;
+
     // ── 🧑‍🚀 PLAYER ASTRONAUT 3D CHARACTER (PUBG Mobile Player) ──
     const astronaut = new THREE.Group();
     astronaut.position.copy(playerPosRef.current);
@@ -559,6 +827,21 @@ export const Outpost3DView: React.FC<Outpost3DViewProps> = ({
     plss.position.set(0, 1.18, -0.32);
     plss.castShadow = true;
     astronaut.add(plss);
+
+    // Twin PLSS Jetpack Exhaust Flame Cones
+    const flameGeo = new THREE.ConeGeometry(0.12, 0.55, 8);
+    flameGeo.rotateX(Math.PI);
+    const flameMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.9 });
+    const flameL = new THREE.Mesh(flameGeo, flameMat);
+    flameL.position.set(-0.18, 0.76, -0.32);
+    flameL.scale.set(0.001, 0.001, 0.001);
+    astronaut.add(flameL);
+
+    const flameR = new THREE.Mesh(flameGeo, flameMat);
+    flameR.position.set(0.18, 0.76, -0.32);
+    flameR.scale.set(0.001, 0.001, 0.001);
+    astronaut.add(flameR);
+    jetpackFlamesRef.current = [flameL, flameR];
 
     // Status LED on PLSS
     const plssLed = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 8), new THREE.MeshBasicMaterial({ color: 0x10b981 }));
@@ -635,6 +918,44 @@ export const Outpost3DView: React.FC<Outpost3DViewProps> = ({
     rightArm.position.y = -0.3;
     rightArm.castShadow = true;
     rightArmGroup.add(rightArm);
+
+    // ── PUBG / FREE FIRE TACTICAL MULTI-TOOL (Plasma Mining Blaster) ──
+    const toolGroup = new THREE.Group();
+    const toolBody = new THREE.Mesh(
+      new THREE.BoxGeometry(0.14, 0.16, 0.52),
+      new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.25, metalness: 0.85 })
+    );
+    toolBody.position.set(0, -0.32, 0.26);
+    toolBody.castShadow = true;
+    toolGroup.add(toolBody);
+
+    const powerCore = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.045, 0.045, 0.22, 10),
+      new THREE.MeshStandardMaterial({ color: 0x38bdf8, emissive: 0x0284c7, emissiveIntensity: 1.2 })
+    );
+    powerCore.position.set(0, -0.22, 0.24);
+    powerCore.rotation.x = Math.PI / 2;
+    toolGroup.add(powerCore);
+
+    const muzzle = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.04, 0.055, 0.14, 8),
+      new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.95, roughness: 0.15 })
+    );
+    muzzle.rotation.x = Math.PI / 2;
+    muzzle.position.set(0, -0.32, 0.54);
+    toolGroup.add(muzzle);
+
+    const diode = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.015, 0.015, 0.1, 6),
+      new THREE.MeshBasicMaterial({ color: 0xef4444 })
+    );
+    diode.rotation.x = Math.PI / 2;
+    diode.position.set(0.06, -0.25, 0.46);
+    toolGroup.add(diode);
+
+    rightArmGroup.add(toolGroup);
+    weaponMeshRef.current = toolGroup;
+
     astronaut.add(rightArmGroup);
     rightArmRef.current = rightArmGroup;
 
@@ -807,8 +1128,21 @@ export const Outpost3DView: React.FC<Outpost3DViewProps> = ({
         if (rightArmRef.current) rightArmRef.current.rotation.x *= 0.85;
       }
 
-      // 2. LUNAR GRAVITY & GROUND COLLISION
+      // 2. LUNAR GRAVITY, JETPACK BOOST & GROUND COLLISION
       const groundY = getTerrainHeight(playerPosRef.current.x, playerPosRef.current.z);
+      
+      // Jetpack Thruster Burn
+      if ((keys['Space'] || keys[' ']) && !isGroundedRef.current && jetpackFuel > 2) {
+        playerVelRef.current.y = Math.min(playerVelRef.current.y + delta * 13.0, 6.8);
+        setJetpackFuel((prev) => Math.max(0, prev - delta * 32));
+        jetpackFlamesRef.current.forEach((f) => f.scale.set(1.0, 1.3 + Math.random() * 0.5, 1.0));
+      } else {
+        jetpackFlamesRef.current.forEach((f) => f.scale.set(0.001, 0.001, 0.001));
+        if (isGroundedRef.current) {
+          setJetpackFuel((prev) => Math.min(100, prev + delta * 22));
+        }
+      }
+
       playerVelRef.current.y -= 9.8 * 0.25 * delta; // 1/4th Earth gravity for high lunar leap
       playerPosRef.current.y += playerVelRef.current.y * delta;
 
@@ -820,6 +1154,13 @@ export const Outpost3DView: React.FC<Outpost3DViewProps> = ({
 
       if (astronautRef.current) {
         astronautRef.current.position.copy(playerPosRef.current);
+      }
+
+      // Sonar Wave Animation
+      if (sonarRingRef.current && (sonarRingRef.current.material as THREE.MeshBasicMaterial).opacity > 0.05) {
+        sonarRingRef.current.scale.x += delta * 34;
+        sonarRingRef.current.scale.y += delta * 34;
+        (sonarRingRef.current.material as THREE.MeshBasicMaterial).opacity -= delta * 1.3;
       }
 
       // 3. AMONG US-STYLE ZONE PROXIMITY DETECTION
@@ -844,14 +1185,31 @@ export const Outpost3DView: React.FC<Outpost3DViewProps> = ({
       // 4. CAMERA MODES (TPS PUBG OVER-THE-SHOULDER & DRIVEABLE ROVER)
       if (cameraMode === 'TPS_ASTRONAUT') {
         const p = playerPosRef.current;
-        const camDist = 5.2;
-        const shoulderOffset = 0.7; // slight over-the-right-shoulder offset
+        const camDist = isAiming ? 2.4 : 5.2;
+        const shoulderOffset = isAiming ? 0.85 : 0.7; // tighter over-shoulder during ADS
+
+        // Smooth FOV transition for ADS zoom
+        camera.fov = THREE.MathUtils.lerp(camera.fov, isAiming ? 32 : 50, 0.16);
+        camera.updateProjectionMatrix();
+
+        // Aim weapon arm towards crosshair pitch
+        if (rightArmRef.current) {
+          if (isAiming) {
+            rightArmRef.current.rotation.x = THREE.MathUtils.lerp(
+              rightArmRef.current.rotation.x,
+              -Math.PI / 2 + cameraPitchRef.current * 0.7,
+              0.25
+            );
+          } else if (!isMoving) {
+            rightArmRef.current.rotation.x = THREE.MathUtils.lerp(rightArmRef.current.rotation.x, 0, 0.12);
+          }
+        }
 
         const camX = p.x - Math.sin(cameraYawRef.current) * camDist + Math.cos(cameraYawRef.current) * shoulderOffset;
         const camZ = p.z - Math.cos(cameraYawRef.current) * camDist - Math.sin(cameraYawRef.current) * shoulderOffset;
-        const camY = p.y + 1.8 + Math.sin(cameraPitchRef.current) * 2.2;
+        const camY = p.y + (isAiming ? 1.6 : 1.8) + Math.sin(cameraPitchRef.current) * (isAiming ? 1.4 : 2.2);
 
-        camera.position.lerp(new THREE.Vector3(camX, Math.max(camY, groundY + 0.8), camZ), 0.12);
+        camera.position.lerp(new THREE.Vector3(camX, Math.max(camY, groundY + 0.8), camZ), 0.14);
 
         // Look slightly above astronaut's head at crosshair target
         const lookTarget = new THREE.Vector3(
@@ -860,6 +1218,20 @@ export const Outpost3DView: React.FC<Outpost3DViewProps> = ({
           p.z + Math.cos(cameraYawRef.current) * 12
         );
         camera.lookAt(lookTarget);
+
+        // Tactical ADS Rangefinder Raycast
+        if (isAiming) {
+          const ray = new THREE.Raycaster();
+          ray.setFromCamera(new THREE.Vector2(0, 0), camera);
+          const hits = ray.intersectObjects(scene.children, true);
+          if (hits.length > 0) {
+            setTargetRange(Math.round(hits[0].distance * 10) / 10);
+          } else {
+            setTargetRange(null);
+          }
+        } else {
+          setTargetRange(null);
+        }
       } else if (cameraMode === 'ROVER') {
         // Driveable Rover Mechanics
         let rSteer = 0;
@@ -928,14 +1300,50 @@ export const Outpost3DView: React.FC<Outpost3DViewProps> = ({
     };
   }, [currentSol, isNight, isSolarStorm, isShieldActive, resources.power, resources.oxygen, getTerrainHeight]);
 
-  // Mouse Drag Camera Look (PUBG Look controls)
+  // Pointer Lock & Mouse Look (True FPS/TPS PUBG Free Fire Controls)
+  useEffect(() => {
+    const handlePointerLockChange = () => {
+      const canvas = containerRef.current?.querySelector('canvas');
+      const locked = !!canvas && document.pointerLockElement === canvas;
+      setIsPointerLocked(locked);
+    };
+
+    const handlePointerLockMove = (e: MouseEvent) => {
+      if (document.pointerLockElement && cameraMode === 'TPS_ASTRONAUT') {
+        const sens = isAiming ? 0.0016 : 0.0024;
+        cameraYawRef.current += e.movementX * sens;
+        cameraPitchRef.current = Math.max(-0.55, Math.min(0.75, cameraPitchRef.current + e.movementY * sens));
+      }
+    };
+
+    document.addEventListener('pointerlockchange', handlePointerLockChange);
+    document.addEventListener('mousemove', handlePointerLockMove);
+    return () => {
+      document.removeEventListener('pointerlockchange', handlePointerLockChange);
+      document.removeEventListener('mousemove', handlePointerLockMove);
+    };
+  }, [cameraMode, isAiming]);
+
+  // Mouse Click & Drag (Supports both Pointer Lock and Fallback Drag)
   const handleMouseDown = (e: React.MouseEvent) => {
+    if (e.button === 2) {
+      // Right-click: Aim Down Sights (ADS)
+      e.preventDefault();
+      setIsAiming(true);
+      isRightMouseDownRef.current = true;
+      soundFx.playClick(1200);
+      return;
+    }
+    if (e.button === 0) {
+      // Left-click: Fire active weapon/tool
+      fireActiveTool();
+    }
     isMouseDownRef.current = true;
     lastMousePosRef.current = { x: e.clientX, y: e.clientY };
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isMouseDownRef.current) return;
+    if (!isMouseDownRef.current || isPointerLocked) return;
     const dx = e.clientX - lastMousePosRef.current.x;
     const dy = e.clientY - lastMousePosRef.current.y;
     cameraYawRef.current -= dx * 0.006;
@@ -943,8 +1351,22 @@ export const Outpost3DView: React.FC<Outpost3DViewProps> = ({
     lastMousePosRef.current = { x: e.clientX, y: e.clientY };
   };
 
-  const handleMouseUp = () => {
+  const handleMouseUp = (e: React.MouseEvent) => {
+    if (e.button === 2) {
+      setIsAiming(false);
+      isRightMouseDownRef.current = false;
+      return;
+    }
     isMouseDownRef.current = false;
+  };
+
+  const handleContainerClick = () => {
+    if (cameraMode === 'TPS_ASTRONAUT' && containerRef.current) {
+      const canvas = containerRef.current.querySelector('canvas');
+      if (canvas && document.pointerLockElement !== canvas) {
+        canvas.requestPointerLock();
+      }
+    }
   };
 
   // Universal Pointer, Mouse & Touch Virtual Joystick Handlers
@@ -1039,8 +1461,10 @@ export const Outpost3DView: React.FC<Outpost3DViewProps> = ({
         borderRadius: '0 0 12px 12px',
         overflow: 'hidden',
         userSelect: 'none',
-        cursor: isMouseDownRef.current ? 'grabbing' : 'grab',
+        cursor: isPointerLocked ? 'crosshair' : (isMouseDownRef.current ? 'grabbing' : 'grab'),
       }}
+      onClick={handleContainerClick}
+      onContextMenu={(e) => e.preventDefault()}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
@@ -1049,27 +1473,83 @@ export const Outpost3DView: React.FC<Outpost3DViewProps> = ({
       {/* 3D WebGL Canvas */}
       <div ref={containerRef} style={{ width: '100%', height: '100%' }} />
 
-      {/* ── PUBG MOBILE TACTICAL HUD OVERLAY ── */}
+      {/* ── PUBG MOBILE / FREE FIRE TACTICAL HUD OVERLAY ── */}
 
-      {/* 1. Tactical Crosshair in Center of Screen */}
-      <div
-        style={{
-          position: 'absolute',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          width: '26px',
-          height: '26px',
-          pointerEvents: 'none',
-          opacity: 0.75,
-        }}
-      >
-        <div style={{ position: 'absolute', top: 0, left: '12px', width: '2px', height: '6px', backgroundColor: '#38bdf8' }} />
-        <div style={{ position: 'absolute', bottom: 0, left: '12px', width: '2px', height: '6px', backgroundColor: '#38bdf8' }} />
-        <div style={{ position: 'absolute', top: '12px', left: 0, width: '6px', height: '2px', backgroundColor: '#38bdf8' }} />
-        <div style={{ position: 'absolute', top: '12px', right: 0, width: '6px', height: '2px', backgroundColor: '#38bdf8' }} />
-        <div style={{ position: 'absolute', top: '11px', left: '11px', width: '4px', height: '4px', borderRadius: '50%', backgroundColor: '#38bdf8' }} />
-      </div>
+      {/* 1. Tactical Dynamic Crosshair in Center of Screen */}
+      {cameraMode === 'TPS_ASTRONAUT' && (
+        <div
+          style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            width: isAiming ? '18px' : isSprinting ? '32px' : '22px',
+            height: isAiming ? '18px' : isSprinting ? '32px' : '22px',
+            pointerEvents: 'none',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            transition: 'width 0.15s ease, height 0.15s ease',
+            zIndex: 20,
+          }}
+        >
+          {/* Crosshair Wings */}
+          <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)', width: '2px', height: isAiming ? '4px' : '6px', backgroundColor: isAiming ? '#38bdf8' : 'rgba(56, 189, 248, 0.75)' }} />
+          <div style={{ position: 'absolute', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: '2px', height: isAiming ? '4px' : '6px', backgroundColor: isAiming ? '#38bdf8' : 'rgba(56, 189, 248, 0.75)' }} />
+          <div style={{ position: 'absolute', top: '50%', left: 0, transform: 'translateY(-50%)', width: isAiming ? '4px' : '6px', height: '2px', backgroundColor: isAiming ? '#38bdf8' : 'rgba(56, 189, 248, 0.75)' }} />
+          <div style={{ position: 'absolute', top: '50%', right: 0, transform: 'translateY(-50%)', width: isAiming ? '4px' : '6px', height: '2px', backgroundColor: isAiming ? '#38bdf8' : 'rgba(56, 189, 248, 0.75)' }} />
+
+          {/* Center Precision Dot */}
+          <div
+            style={{
+              width: isAiming ? '4px' : '3px',
+              height: isAiming ? '4px' : '3px',
+              borderRadius: '50%',
+              backgroundColor: isAiming ? '#ef4444' : '#38bdf8',
+              boxShadow: isAiming ? '0 0 8px #ef4444' : '0 0 6px #38bdf8',
+            }}
+          />
+
+          {/* Hitmarker Flash (✕) */}
+          {hitmarker && (
+            <div
+              style={{
+                position: 'absolute',
+                fontSize: '18px',
+                fontWeight: 900,
+                color: '#ef4444',
+                textShadow: '0 0 8px #ef4444',
+                lineHeight: 1,
+                userSelect: 'none',
+              }}
+            >
+              ✕
+            </div>
+          )}
+
+          {/* Range / ADS Meter Tag */}
+          {isAiming && (
+            <div
+              style={{
+                position: 'absolute',
+                bottom: '-22px',
+                fontSize: '8px',
+                fontFamily: "'JetBrains Mono', monospace",
+                fontWeight: 800,
+                color: '#38bdf8',
+                letterSpacing: '0.06em',
+                whiteSpace: 'nowrap',
+                background: 'rgba(3, 7, 18, 0.75)',
+                padding: '1px 6px',
+                borderRadius: '4px',
+                border: '1px solid rgba(56, 189, 248, 0.4)',
+              }}
+            >
+              ADS 32° · {targetRange !== null ? `${targetRange}m` : 'SCANNING'}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* 2. Top-Left Telemetry & Mission Coordinates */}
       <div
@@ -1080,12 +1560,13 @@ export const Outpost3DView: React.FC<Outpost3DViewProps> = ({
           display: 'flex',
           alignItems: 'center',
           gap: '8px',
-          background: 'rgba(3, 7, 18, 0.85)',
+          background: 'rgba(3, 7, 18, 0.88)',
           padding: '5px 12px',
           borderRadius: '6px',
           border: '1px solid rgba(56, 189, 248, 0.3)',
           backdropFilter: 'blur(8px)',
           pointerEvents: 'none',
+          zIndex: 20,
         }}
       >
         <div style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: '#10b981', boxShadow: '0 0 10px #10b981' }} />
@@ -1094,17 +1575,17 @@ export const Outpost3DView: React.FC<Outpost3DViewProps> = ({
         </span>
       </div>
 
-      {/* 2b. PUBG Mobile Dynamic Compass Ribbon Tape (Top Center) */}
+      {/* 2b. PUBG Dynamic Compass Ribbon Tape (Top Center) */}
       <div
         style={{
           position: 'absolute',
-          top: '12px',
+          top: '10px',
           left: '50%',
           transform: 'translateX(-50%)',
-          width: '280px',
+          width: '290px',
           height: '32px',
-          background: 'rgba(3, 7, 18, 0.88)',
-          border: '1px solid rgba(56, 189, 248, 0.35)',
+          background: 'rgba(3, 7, 18, 0.90)',
+          border: '1px solid rgba(56, 189, 248, 0.4)',
           borderRadius: '8px',
           boxShadow: '0 0 16px rgba(0,0,0,0.8), 0 0 8px rgba(56, 189, 248, 0.2)',
           backdropFilter: 'blur(8px)',
@@ -1125,7 +1606,7 @@ export const Outpost3DView: React.FC<Outpost3DViewProps> = ({
           marginBottom: '2px',
         }} />
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '10.5px', fontWeight: 800, color: '#38bdf8', letterSpacing: '0.05em' }}>
+          <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '11px', fontWeight: 800, color: '#38bdf8', letterSpacing: '0.05em' }}>
             {compassDeg}° {compassDeg >= 337 || compassDeg < 23 ? 'N' : compassDeg < 68 ? 'NE' : compassDeg < 113 ? 'E' : compassDeg < 158 ? 'SE' : compassDeg < 203 ? 'S' : compassDeg < 248 ? 'SW' : compassDeg < 293 ? 'W' : 'NW'}
           </span>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '10px' }}>
@@ -1133,9 +1614,47 @@ export const Outpost3DView: React.FC<Outpost3DViewProps> = ({
             <span title="Solar Tower">⚡</span>
             <span title="Kilopower">☢️</span>
             <span title="Rover Garage">🚜</span>
+            <span title="Mineral Node" style={{ color: '#38bdf8' }}>💎</span>
           </div>
         </div>
       </div>
+
+      {/* 2c. Pointer Lock Status Pill */}
+      {cameraMode === 'TPS_ASTRONAUT' && (
+        <div
+          onClick={handleContainerClick}
+          style={{
+            position: 'absolute',
+            top: '46px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            background: isPointerLocked ? 'rgba(16, 185, 129, 0.25)' : 'rgba(3, 7, 18, 0.92)',
+            border: `1px solid ${isPointerLocked ? '#10b981' : 'rgba(56, 189, 248, 0.5)'}`,
+            borderRadius: '20px',
+            padding: '3px 12px',
+            fontSize: '9px',
+            fontFamily: "'JetBrains Mono', monospace",
+            fontWeight: 700,
+            color: isPointerLocked ? '#10b981' : '#38bdf8',
+            cursor: 'pointer',
+            boxShadow: '0 0 12px rgba(0,0,0,0.6)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            zIndex: 22,
+          }}
+        >
+          {isPointerLocked ? (
+            <span>🟢 MOUSE AIM LOCKED · [ESC TO FREE]</span>
+          ) : (
+            <>
+              <span>🎯 CLICK SCREEN TO LOCK MOUSE AIM</span>
+              <span style={{ color: '#64748b' }}>·</span>
+              <span style={{ color: '#f59e0b' }}>RIGHT-CLICK ADS</span>
+            </>
+          )}
+        </div>
+      )}
 
       {/* 3. Top-Right Tactical Radar (PUBG Mobile Minimap) */}
       <div
@@ -1153,6 +1672,7 @@ export const Outpost3DView: React.FC<Outpost3DViewProps> = ({
           alignItems: 'center',
           justifyContent: 'center',
           pointerEvents: 'none',
+          zIndex: 20,
         }}
       >
         {/* Radar concentric rings */}
@@ -1175,11 +1695,53 @@ export const Outpost3DView: React.FC<Outpost3DViewProps> = ({
         <div style={{ position: 'absolute', top: '22px', left: '38px', width: '5px', height: '5px', borderRadius: '50%', backgroundColor: '#10b981', boxShadow: '0 0 6px #10b981' }} />
         {/* Rover ping */}
         <div style={{ position: 'absolute', bottom: '26px', right: '22px', width: '4px', height: '4px', borderRadius: '50%', backgroundColor: '#fbbf24' }} />
+        {/* Crystal pings */}
+        <div style={{ position: 'absolute', top: '30px', right: '26px', width: '3px', height: '3px', borderRadius: '50%', backgroundColor: '#38bdf8' }} />
+        <div style={{ position: 'absolute', bottom: '34px', left: '24px', width: '3px', height: '3px', borderRadius: '50%', backgroundColor: '#67e8f9' }} />
 
         {/* Radar Label */}
         <span style={{ position: 'absolute', bottom: '2px', fontFamily: "'JetBrains Mono', monospace", fontSize: '7px', color: '#64748b' }}>
           RADAR 50m
         </span>
+      </div>
+
+      {/* 3b. Free Fire Style Combat & Discovery Action Feed */}
+      <div
+        style={{
+          position: 'absolute',
+          top: '102px',
+          right: '14px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '4px',
+          alignItems: 'flex-end',
+          pointerEvents: 'none',
+          zIndex: 20,
+        }}
+      >
+        {actionFeed.map((item) => (
+          <div
+            key={item.id}
+            style={{
+              background: 'rgba(3, 7, 18, 0.90)',
+              borderLeft: `3px solid ${item.type === 'loot' ? '#10b981' : item.type === 'flag' ? '#f59e0b' : '#38bdf8'}`,
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              borderRadius: '4px',
+              padding: '3px 8px',
+              fontSize: '9px',
+              fontFamily: "'JetBrains Mono', monospace",
+              fontWeight: 600,
+              color: item.type === 'loot' ? '#34d399' : item.type === 'flag' ? '#fbbf24' : '#e2e8f0',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.6)',
+              maxWidth: '220px',
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+            }}
+          >
+            {item.text}
+          </div>
+        ))}
       </div>
 
       {/* 4. AMONG US TASK ZONE ENTRY PROMPT — glows when player walks near a task station */}
@@ -1789,52 +2351,161 @@ export const Outpost3DView: React.FC<Outpost3DViewProps> = ({
         </div>
       )}
 
-      {/* ── PUBG TACTICAL VITALS PANEL (BOTTOM LEFT) ── */}
+      {/* ── PUBG / FREE FIRE TACTICAL VITALS PANEL (BOTTOM LEFT) ── */}
       <div
         style={{
           position: 'absolute',
-          bottom: '50px',
+          bottom: '48px',
           left: '115px',
           display: 'flex',
           flexDirection: 'column',
-          gap: '4px',
-          background: 'rgba(3, 7, 18, 0.90)',
-          border: '1px solid rgba(56, 189, 248, 0.3)',
+          gap: '3px',
+          background: 'rgba(3, 7, 18, 0.92)',
+          border: '1px solid rgba(56, 189, 248, 0.35)',
           borderRadius: '8px',
           padding: '6px 12px',
           backdropFilter: 'blur(8px)',
           pointerEvents: 'none',
           zIndex: 24,
-          minWidth: '190px',
+          minWidth: '200px',
         }}
       >
         {/* Suit Integrity (Health) */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px' }}>
-          <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '9px', fontWeight: 700, color: '#94a3b8' }}>HEALTH</span>
-          <div style={{ flex: 1, height: '6px', background: 'rgba(30, 41, 59, 0.8)', borderRadius: '3px', overflow: 'hidden' }}>
+          <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '8.5px', fontWeight: 700, color: '#94a3b8' }}>ARMOR</span>
+          <div style={{ flex: 1, height: '5px', background: 'rgba(30, 41, 59, 0.8)', borderRadius: '3px', overflow: 'hidden' }}>
             <div style={{ width: `${resources.crewHealth}%`, height: '100%', background: '#10b981', boxShadow: '0 0 6px #10b981' }} />
           </div>
-          <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '9px', fontWeight: 700, color: '#10b981' }}>{resources.crewHealth}%</span>
+          <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '8.5px', fontWeight: 700, color: '#10b981' }}>{resources.crewHealth}%</span>
         </div>
 
-        {/* Stamina Boost Bar */}
+        {/* Sprint Boost (Stamina) */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px' }}>
-          <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '9px', fontWeight: 700, color: '#94a3b8' }}>BOOST</span>
-          <div style={{ flex: 1, height: '6px', background: 'rgba(30, 41, 59, 0.8)', borderRadius: '3px', overflow: 'hidden' }}>
+          <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '8.5px', fontWeight: 700, color: '#94a3b8' }}>BOOST</span>
+          <div style={{ flex: 1, height: '5px', background: 'rgba(30, 41, 59, 0.8)', borderRadius: '3px', overflow: 'hidden' }}>
             <div style={{ width: `${stamina}%`, height: '100%', background: '#f59e0b', boxShadow: '0 0 6px #f59e0b' }} />
           </div>
-          <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '9px', fontWeight: 700, color: '#f59e0b' }}>{Math.round(stamina)}%</span>
+          <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '8.5px', fontWeight: 700, color: '#f59e0b' }}>{Math.round(stamina)}%</span>
+        </div>
+
+        {/* Jetpack Thruster Fuel */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px' }}>
+          <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '8.5px', fontWeight: 700, color: '#94a3b8' }}>JETPACK</span>
+          <div style={{ flex: 1, height: '5px', background: 'rgba(30, 41, 59, 0.8)', borderRadius: '3px', overflow: 'hidden' }}>
+            <div style={{ width: `${jetpackFuel}%`, height: '100%', background: '#38bdf8', boxShadow: '0 0 6px #38bdf8' }} />
+          </div>
+          <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '8.5px', fontWeight: 700, color: '#38bdf8' }}>{Math.round(jetpackFuel)}%</span>
         </div>
 
         {/* O2 Oxygen Bar */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px' }}>
-          <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '9px', fontWeight: 700, color: '#94a3b8' }}>OXYGEN</span>
-          <div style={{ flex: 1, height: '6px', background: 'rgba(30, 41, 59, 0.8)', borderRadius: '3px', overflow: 'hidden' }}>
-            <div style={{ width: `${resources.oxygen}%`, height: '100%', background: '#38bdf8', boxShadow: '0 0 6px #38bdf8' }} />
+          <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '8.5px', fontWeight: 700, color: '#94a3b8' }}>OXYGEN</span>
+          <div style={{ flex: 1, height: '5px', background: 'rgba(30, 41, 59, 0.8)', borderRadius: '3px', overflow: 'hidden' }}>
+            <div style={{ width: `${resources.oxygen}%`, height: '100%', background: '#06b6d4', boxShadow: '0 0 6px #06b6d4' }} />
           </div>
-          <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '9px', fontWeight: 700, color: '#38bdf8' }}>{resources.oxygen}%</span>
+          <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '8.5px', fontWeight: 700, color: '#06b6d4' }}>{resources.oxygen}%</span>
+        </div>
+
+        {/* Science Loot Nodes Counter */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: '2px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+          <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '8.5px', color: '#f59e0b' }}>💎 SAMPLES MINED</span>
+          <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '9px', fontWeight: 800, color: '#fbbf24' }}>{lootCount} NODES</span>
         </div>
       </div>
+
+      {/* ── PUBG / FREE FIRE TACTICAL WEAPON & TOOL WHEEL (BOTTOM CENTER) ── */}
+      {cameraMode === 'TPS_ASTRONAUT' && (
+        <div
+          style={{
+            position: 'absolute',
+            bottom: '48px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            background: 'rgba(3, 7, 18, 0.94)',
+            border: '1px solid rgba(56, 189, 248, 0.4)',
+            borderRadius: '10px',
+            padding: '4px 8px',
+            backdropFilter: 'blur(8px)',
+            zIndex: 25,
+            boxShadow: '0 4px 20px rgba(0,0,0,0.8)',
+          }}
+          onMouseDown={(e) => e.stopPropagation()}
+          onPointerDown={(e) => e.stopPropagation()}
+        >
+          {[
+            { id: 'LASER', slot: '1', name: 'MINING LASER', icon: '⚡' },
+            { id: 'SCANNER', slot: '2', name: 'RADAR SCAN', icon: '📡' },
+            { id: 'FLAG', slot: '3', name: 'NASA FLAG', icon: '🚩' },
+          ].map((t) => (
+            <button
+              key={t.id}
+              onClick={() => {
+                setActiveTool(t.id as any);
+                soundFx.playClick(900);
+                pushActionFeed(`EQUIPPED [${t.slot}]: ${t.name}`, 'info');
+              }}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '5px',
+                padding: '4px 9px',
+                borderRadius: '6px',
+                background: activeTool === t.id ? 'rgba(56, 189, 248, 0.25)' : 'rgba(255, 255, 255, 0.05)',
+                border: `1.5px solid ${activeTool === t.id ? '#38bdf8' : 'rgba(255, 255, 255, 0.12)'}`,
+                color: activeTool === t.id ? '#38bdf8' : '#94a3b8',
+                cursor: 'pointer',
+                fontSize: '9.5px',
+                fontWeight: 700,
+                fontFamily: "'JetBrains Mono', monospace",
+                transition: 'all 0.15s ease',
+              }}
+              title={`Switch tool [Key ${t.slot}] · Left Click to use`}
+            >
+              <span style={{
+                background: activeTool === t.id ? '#38bdf8' : '#475569',
+                color: '#030712',
+                borderRadius: '3px',
+                padding: '1px 4px',
+                fontSize: '8.5px',
+                fontWeight: 800,
+              }}>
+                {t.slot}
+              </span>
+              <span>{t.icon}</span>
+              <span style={{ display: 'inline-block' }}>{t.name}</span>
+            </button>
+          ))}
+
+          {/* ADS Aim Button */}
+          <button
+            onClick={() => {
+              setIsAiming((prev) => !prev);
+              soundFx.playClick(1100);
+            }}
+            style={{
+              padding: '4px 9px',
+              borderRadius: '6px',
+              background: isAiming ? 'rgba(245, 158, 11, 0.35)' : 'rgba(255, 255, 255, 0.05)',
+              border: `1.5px solid ${isAiming ? '#f59e0b' : 'rgba(255, 255, 255, 0.12)'}`,
+              color: isAiming ? '#f59e0b' : '#94a3b8',
+              fontSize: '9.5px',
+              fontWeight: 800,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              fontFamily: "'JetBrains Mono', monospace",
+            }}
+            title="Toggle ADS Aim Down Sights [Right-Click or R]"
+          >
+            <span>🎯</span>
+            <span>{isAiming ? 'ADS ON' : 'AIM ADS'}</span>
+          </button>
+        </div>
+      )}
 
       {/* 7. Bottom Navigation Mode Bar */}
       <div

@@ -1,7 +1,8 @@
 {
-  "name": "temp-app",
+  "name": "jr-astrocamp",
+  "version": "1.0.0",
+  "description": "Jr_AstroCamp: 76-Mission Flight Simulator & Multi-Format Learning Platform for NASA International Space Apps Challenge 2026",
   "private": true,
-  "version": "0.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",

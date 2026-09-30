@@ -1,8 +1,8 @@
-"""
+r"""
 nasa_game/scenes/docking_scene.py
-Orbital Rendezvous & Docking Flight Simulator.
-Features 3D-perspective docking adapter with alignment guide petals, blinking LED strobes,
-RCS nitrogen cold-gas thruster puffs, range radar, and mechanical capture lock.
+NASA International Space Station & Gateway Orbital Rendezvous / Docking Simulator.
+Features 3D-perspective docking adapter with laser range radar, relative velocity $\dot{R}$
+telemetry, attitude alignment crosshairs, and capture latch mechanics.
 """
 import math
 import random
@@ -13,19 +13,22 @@ from nasa_game.audio import sound_engine
 from nasa_game.graphics import SPRITES, ParticleSystem, ScreenShake
 from nasa_game.ui import (
     COLOR_BG, COLOR_PANEL, COLOR_CYAN, COLOR_GOLD, COLOR_EMERALD, COLOR_RED,
-    COLOR_TEXT, COLOR_TEXT_DIM, draw_gauge
+    COLOR_ORANGE, COLOR_TEXT, COLOR_TEXT_DIM, COLOR_PANEL_BORDER,
+    draw_gauge, draw_hud_panel, get_font
 )
 
 class DockingScene:
+    W, H = 1024, 720
+
     def __init__(self, mission: Mission, on_finish: Callable[[bool, int, str], None]):
         self.mission = mission
         self.on_finish = on_finish
 
-        # Docking target center in screen space
+        # Target center coordinates
         self.target_x = 512.0
         self.target_y = 360.0
 
-        # Spacecraft approach kinematics
+        # Approach kinematics
         self.probe_x = 512.0 + 130.0
         self.probe_y = 360.0 - 80.0
         self.probe_vx = -10.0
@@ -46,15 +49,18 @@ class DockingScene:
         # FX Systems
         self.particles = ParticleSystem()
         self.shake = ScreenShake()
-        self.stars = [(random.randint(0, 1024), random.randint(0, 720), random.random()) for _ in range(90)]
+        self.stars = [
+            (random.randint(0, self.W), random.randint(0, self.H), random.random(), random.uniform(0.6, 2.0))
+            for _ in range(110)
+        ]
 
-        # Capcom Callouts
-        self.callout_text = "APPROACH RADAR ACQUIRED — MAINTAIN < 1.0 M/S"
+        # Callouts
+        self.callout_text = "APPROACH RADAR LOCKED // MAINTAIN < 1.0 M/S"
         self.callout_timer = 4.0
 
-        self.font = pygame.font.SysFont("monospace", 13, bold=True)
-        self.font_large = pygame.font.SysFont("monospace", 18, bold=True)
-        self.font_hud = pygame.font.SysFont("monospace", 11)
+        self.font = get_font(13, bold=True, mono=True)
+        self.font_large = get_font(16, bold=True, mono=True)
+        self.font_hud = get_font(11, bold=True, mono=True)
 
     def handle_event(self, event: pygame.event.Event):
         pass
@@ -67,14 +73,14 @@ class DockingScene:
         self.callout_timer -= dt
 
         if self.time_left <= 0:
-            self._end_game(False, "Orbital pass window expired before docking capture.")
+            self._end_game(False, "Orbital approach timeline expired before hard capture.")
             return
 
         keys = pygame.key.get_pressed()
         fired_rcs = False
         thrust = 55.0 * dt
 
-        # Translation controls (W/A/S/D or Arrows)
+        # Translation controls
         if (keys[pygame.K_a] or keys[pygame.K_LEFT]) and self.fuel > 0:
             self.probe_vx -= thrust
             fired_rcs = True
@@ -92,7 +98,7 @@ class DockingScene:
             fired_rcs = True
             self.particles.emit_rcs(512, 580, 0, 40, count=2)
 
-        # Forward / Reverse Approach Speed (Q / E)
+        # Forward / Reverse Approach Speed
         if keys[pygame.K_q] and self.fuel > 0:
             self.approach_speed_ms = max(0.05, self.approach_speed_ms - dt * 0.8)
             fired_rcs = True
@@ -106,7 +112,7 @@ class DockingScene:
             if math.fmod(self.time_left, 0.4) < 0.1:
                 sound_engine.play('thruster')
 
-        # Microgravity drift damping
+        # Microgravity damping
         self.probe_vx *= (1.0 - dt * 0.18)
         self.probe_vy *= (1.0 - dt * 0.18)
 
@@ -114,43 +120,39 @@ class DockingScene:
         self.probe_y += self.probe_vy * dt
         self.distance_m = max(0.0, self.distance_m - self.approach_speed_ms * dt * 4.5)
 
-        # Distance from center target
         offset_dist = math.hypot(self.probe_x - self.target_x, self.probe_y - self.target_y)
 
-        # Alignment Lock Accumulation
+        # Alignment Lock
         if offset_dist <= self.tolerance_px and self.approach_speed_ms <= self.max_speed:
             self.lock_timer += dt
             if self.distance_m <= 1.5:
-                # Capture contact
                 self.shake.trigger(7.0, 0.3)
                 self._end_game(True, "HARD CAPTURE CONFIRMED! Mechanical docking latches locked.")
                 return
         else:
             self.lock_timer = max(0.0, self.lock_timer - dt * 2.0)
 
-        # Collision Check if speed too high at contact
+        # Collision Check
         if self.distance_m <= 0.5:
             if self.approach_speed_ms > self.max_speed:
                 self.particles.emit_explosion(512, 360, count=40)
                 self.shake.trigger(14.0, 0.6)
-                self._end_game(False, f"DOCKING PORT COLLISION: Closing speed ({self.approach_speed_ms:.2f} m/s) exceeded latch tolerance ({self.max_speed:.2f} m/s).")
+                self._end_game(False, f"DOCKING COLLISION: Approach speed ({self.approach_speed_ms:.2f} m/s) exceeded capture limit ({self.max_speed:.2f} m/s).")
             elif offset_dist > self.tolerance_px:
                 self.particles.emit_explosion(512, 360, count=30)
                 self.shake.trigger(10.0, 0.5)
-                self._end_game(False, "MISALIGNED CONTACT: Spacecraft missed docking collar and struck solar truss.")
+                self._end_game(False, "OFF-AXIS CONTACT: Spacecraft missed capture collar and contacted station truss.")
             return
 
-        # Distance callouts
         if 48.0 < self.distance_m < 52.0 and "50 METERS" not in self.callout_text:
-            self.callout_text = "STATION: RANGE 50 METERS — LINE OF SIGHT NOMINAL"
+            self.callout_text = "RADAR: RANGE 50 METERS // LINE OF SIGHT NOMINAL"
             self.callout_timer = 3.0
             sound_engine.play('quindar')
         elif 9.0 < self.distance_m < 11.0 and "10 METERS" not in self.callout_text:
-            self.callout_text = "CAPCOM: RANGE 10 METERS — GO FOR HARD CAPTURE"
+            self.callout_text = "RADAR: RANGE 10 METERS // CLEARED FOR FINAL CAPTURE"
             self.callout_timer = 3.0
             sound_engine.play('quindar')
 
-        # Update FX
         self.particles.update(dt)
         self.shake.update(dt)
 
@@ -170,22 +172,20 @@ class DockingScene:
         self.on_finish(success, final_score, reason)
 
     def draw(self, surface: pygame.Surface):
-        # Orbit darkness
-        surface.fill((2, 4, 10))
+        # 1. Earth Orbit Deep Space
+        surface.fill(COLOR_BG)
 
-        # Stars
-        for sx, sy, sb in self.stars:
-            b_val = int(sb * 210)
-            surface.set_at((sx, sy), (b_val, b_val, b_val))
+        for sx, sy, sb, spd in self.stars:
+            lum = int(sb * 220)
+            pygame.draw.circle(surface, (lum, lum, min(255, int(lum * 1.1))), (int(sx), int(sy)), 1 if sb < 0.75 else 2)
 
-        # Distant Earth blue atmospheric limb curvature
-        pygame.draw.circle(surface, (12, 38, 84), (512, 1150), 650)
+        # Distant Earth Atmosphere Curvature
+        pygame.draw.circle(surface, (12, 36, 80), (512, 1150), 650)
         pygame.draw.circle(surface, (56, 189, 248), (512, 1150), 652, 2)
 
         ox, oy = self.shake.get_offset()
 
-        # 3D PERSPECTIVE SCALING FOR DOCKING PORT SPRITE
-        # Port grows larger as distance approaches 0
+        # 2. 3D Perspective Scaling of Docking Collar
         scale_factor = max(0.4, min(2.8, 140.0 / (self.distance_m + 35.0)))
         target_orig = SPRITES['docking_target']
         new_w = int(target_orig.get_width() * scale_factor)
@@ -194,77 +194,59 @@ class DockingScene:
         target_rect = target_scaled.get_rect(center=(int(self.target_x + ox), int(self.target_y + oy)))
         surface.blit(target_scaled, target_rect)
 
-        # Draw RCS Particles
         self.particles.draw(surface, (0, 0))
 
-        # ── COCKPIT CROSSHAIR HUD & ALIGNMENT RETICLE ──
-        # Player reticle position
+        # 3. Vector Crosshair HUD & Laser Ranging
         pr_x = int(self.probe_x + ox)
         pr_y = int(self.probe_y + oy)
-
         offset = math.hypot(self.probe_x - self.target_x, self.probe_y - self.target_y)
         is_aligned = offset <= self.tolerance_px
         hud_col = COLOR_EMERALD if is_aligned else COLOR_CYAN
 
-        # Center Alignment Box
+        # Center Target Box
         box_size = int(self.tolerance_px * 2)
         pygame.draw.rect(surface, hud_col, (int(self.target_x - self.tolerance_px), int(self.target_y - self.tolerance_px), box_size, box_size), 1)
 
-        # Player Probe Crosshairs
+        # Precision Flight Crosshair
         pygame.draw.circle(surface, hud_col, (pr_x, pr_y), 18, 1)
-        pygame.draw.circle(surface, hud_col, (pr_x, pr_y), 4)
-        pygame.draw.line(surface, hud_col, (pr_x - 30, pr_y), (pr_x + 30, pr_y), 1)
-        pygame.draw.line(surface, hud_col, (pr_x, pr_y - 30), (pr_x, pr_y + 30), 1)
+        pygame.draw.circle(surface, hud_col, (pr_x, pr_y), 3)
+        pygame.draw.line(surface, hud_col, (pr_x - 28, pr_y), (pr_x + 28, pr_y), 1)
+        pygame.draw.line(surface, hud_col, (pr_x, pr_y - 28), (pr_x, pr_y + 28), 1)
+        pygame.draw.line(surface, (51, 65, 85), (pr_x, pr_y), (int(self.target_x), int(self.target_y)), 1)
 
-        # Line connecting player probe to center port
-        pygame.draw.line(surface, (71, 85, 105), (pr_x, pr_y), (int(self.target_x), int(self.target_y)), 1)
+        # Cockpit Bezel Frame
+        pygame.draw.rect(surface, (11, 19, 32), (0, 0, self.W, self.H), 12)
 
-        # Cockpit Canopy Frame Vignette
-        pygame.draw.rect(surface, (15, 23, 42), (0, 0, 1024, 720), 18)
+        # ── COCKPIT GLASS HUD & TELEMETRY MFDs ────────────────────────────────
 
-        # ── TOP FLIGHT DIRECTOR HUD ──
-        hud_panel = pygame.Surface((1024, 85), pygame.SRCALPHA)
-        hud_panel.fill((10, 15, 26, 220))
-        surface.blit(hud_panel, (0, 0))
-        pygame.draw.line(surface, (30, 41, 59), (0, 85), (1024, 85), 1)
+        draw_hud_panel(surface, pygame.Rect(12, 12, self.W - 24, 82), title="ORBITAL RENDEZVOUS & DOCKING RADAR")
 
-        title_surf = self.font_large.render(f"RENDEZVOUS TARGET: {self.mission.name.upper()}", True, COLOR_CYAN)
-        surface.blit(title_surf, (24, 12))
+        v_name = self.mission.name.upper()
+        if len(v_name) > 28:
+            v_name = v_name[:26] + "..."
+        surface.blit(self.font_large.render(f"TARGET: {v_name}", True, COLOR_CYAN), (26, 32))
 
-        # Callout message
         if self.callout_timer > 0:
-            call_surf = self.font_hud.render(f"CAPCOM: \"{self.callout_text}\"", True, COLOR_GOLD)
-            surface.blit(call_surf, (24, 38))
+            surface.blit(self.font_hud.render(f"RADAR: \"{self.callout_text}\"", True, COLOR_GOLD), (26, 58))
         else:
-            time_surf = self.font.render(f"TIMELINE: {self.time_left:.1f}s REMAINING", True, COLOR_TEXT)
-            surface.blit(time_surf, (24, 38))
+            surface.blit(self.font.render(f"TIMELINE REMAINING: {self.time_left:.1f}s", True, COLOR_TEXT_DIM), (26, 58))
 
-        # Gauges (Right side)
-        # Range Radar
-        draw_gauge(surface, 640, 14, 160, 16, self.distance_m, 160.0,
+        # Right Telemetry Gauges (Range, Speed, Fuel)
+        draw_gauge(surface, 620, 24, 380, 18, self.distance_m, 160.0,
                    f"RANGE: {self.distance_m:.1f} M", COLOR_CYAN)
 
-        # Approach Speed
         spd_col = COLOR_EMERALD if self.approach_speed_ms <= self.max_speed else COLOR_RED
-        draw_gauge(surface, 640, 36, 160, 16, self.approach_speed_ms, 3.0,
-                   f"CLOSING: {self.approach_speed_ms:.2f} M/S (MAX {self.max_speed:.2f})", spd_col)
+        draw_gauge(surface, 620, 46, 380, 18, self.approach_speed_ms, 3.0,
+                   f"CLOSING VELOCITY: {self.approach_speed_ms:.2f} M/S (LIMIT {self.max_speed:.2f})", spd_col)
 
-        # RCS Propellant
-        draw_gauge(surface, 640, 58, 160, 16, self.fuel, self.max_fuel,
-                   f"RCS FUEL: {self.fuel:.1f}s",
+        draw_gauge(surface, 620, 68, 380, 18, self.fuel, self.max_fuel,
+                   f"RCS PROPELLANT: {self.fuel:.1f}s",
                    COLOR_GOLD if self.fuel > 20 else COLOR_RED)
 
         # Bottom Alignment Diagnostics
-        att_panel = pygame.Surface((320, 68), pygame.SRCALPHA)
-        att_panel.fill((15, 23, 42, 210))
-        surface.blit(att_panel, (24, 638))
-        pygame.draw.rect(surface, (51, 65, 85), (24, 638, 320, 68), 1, border_radius=6)
-
+        draw_hud_panel(surface, pygame.Rect(12, self.H - 84, 380, 72), title="ALIGNMENT DIAGNOSTICS")
         lock_pct = min(100, int((self.lock_timer / self.required_lock) * 100))
         l_col = COLOR_EMERALD if lock_pct > 60 else COLOR_CYAN
-        surface.blit(self.font.render(f"CAPTURE LOCK: {lock_pct}%", True, l_col), (36, 646))
-
-        off_str = f"RADIAL OFFSET: {offset:.1f} PX (TOL: {self.tolerance_px:.0f} PX)"
-        surface.blit(self.font.render(off_str, True, COLOR_TEXT), (36, 666))
-
-        surface.blit(self.font_hud.render("WASD: RCS TRANSLATION  ·  Q/E: APPROACH THROTTLE", True, COLOR_TEXT_DIM), (36, 686))
+        surface.blit(self.font.render(f"CAPTURE LATCH ENGAGEMENT: {lock_pct}%", True, l_col), (26, self.H - 68))
+        surface.blit(self.font.render(f"RADIAL OFFSET: {offset:.1f} PX (TOL: {self.tolerance_px:.0f} PX)", True, COLOR_TEXT), (26, self.H - 48))
+        surface.blit(self.font_hud.render("[WASD] RCS TRANSLATION  |  [Q/E] APPROACH SPEED", True, COLOR_TEXT_DIM), (26, self.H - 28))

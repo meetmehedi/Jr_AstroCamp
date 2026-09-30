@@ -258,13 +258,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnter }) => {
           </div>
           <div className="team-motto-banner">
             <p style={{ fontSize:'0.92rem', color:'#94a3b8', lineHeight:1.8, marginBottom:'20px', fontStyle:'italic' }}>
-              "We all remember what it felt like to look up at the sky and wonder.{' '}
+              "We all remember what it felt like to look up at the night sky and wonder what it would take to get up there.{' '}
               <strong style={{ color:'#e2e8f0' }}>Mysterio</strong> isn't just a name.
               Space has always been a mystery, and we're here to make it something anyone can explore, question, and solve."
             </p>
-            <div className="team-motto-text">One Team. One Sky. Infinite Possibilities.</div>
+            <div className="team-motto-text">Fly. Learn. Explore.</div>
             <p style={{ fontSize:'0.72rem', color:'#64748b', marginTop:'8px', letterSpacing:'0.08em', textTransform:'uppercase' }}>
-              NASA Space Apps Challenge 2026
+              NASA International Space Apps Challenge 2026
             </p>
           </div>
         </section>

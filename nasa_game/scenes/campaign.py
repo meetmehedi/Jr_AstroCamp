@@ -1,8 +1,8 @@
 """
 nasa_game/scenes/campaign.py
-Jr_AstroCamp Mission Control Hub – vibrant, kid-friendly campaign map.
-76 real NASA missions with animated star background, colorful mission cards,
-age-adapted difficulty labels, and glowing era banners.
+NASA Mission Flight Operations Directorate & Campaign Manifest Hub.
+Features 76 historical NASA missions categorized across 6 aerospace disciplines,
+real-time telemetry stats, historical era filtering, and flight readiness status.
 """
 import math
 import random
@@ -13,24 +13,26 @@ from nasa_game.audio import sound_engine
 from nasa_game.storage import storage
 from nasa_game.ui import (
     Button, COLOR_BG, COLOR_PANEL, COLOR_PANEL_BORDER, COLOR_CYAN, COLOR_GOLD,
-    COLOR_EMERALD, COLOR_RED, COLOR_ORANGE, COLOR_PURPLE, COLOR_PINK,
-    COLOR_TEXT, COLOR_TEXT_DIM, COLOR_STAR,
-    draw_star_field, draw_kid_badge,
+    COLOR_EMERALD, COLOR_RED, COLOR_ORANGE, COLOR_PURPLE, COLOR_TEXT, COLOR_TEXT_DIM,
+    draw_star_field, draw_hud_panel, get_font
 )
 
-# Game-type to emoji + color map
 TYPE_META = {
-    'launch':    ('🚀', (0, 200, 255),   "ROCKET LAUNCH"),
-    'docking':   ('🛸', (180, 80, 255),  "SPACE DOCKING"),
-    'lander':    ('🌑', (255, 210, 0),   "LUNAR LANDER"),
-    'rover':     ('🤖', (0, 230, 120),   "MARS ROVER"),
-    'telescope': ('🔭', (255, 145, 0),   "TELESCOPE"),
-    'deepspace': ('☄️', (255, 80, 180),  "DEEP SPACE"),
+    'launch':    ('ROCKET LAUNCH',     (56, 189, 248),  "ORBITAL INSERTION"),
+    'docking':   ('SPACE DOCKING',     (168, 85, 247),  "RENDEZVOUS & PROX"),
+    'lander':    ('LUNAR LANDER',      (245, 158, 11),  "TERMINAL DESCENT"),
+    'rover':     ('MARS ROVER',        (16, 185, 129),  "SURFACE MOBILITY"),
+    'telescope': ('OBSERVATORY',       (249, 115, 22),  "DEEP FIELD IMAGING"),
+    'deepspace': ('DEEP SPACE PROBE',  (236, 72, 153),  "GRAVITY SLINGSHOT"),
 }
 
-AGE_LABELS = {1: "⭐ EASY",  2: "⭐⭐ EASY", 3: "⭐⭐⭐ MEDIUM",
-              4: "⭐⭐⭐⭐ HARD", 5: "⭐⭐⭐⭐⭐ EXPERT"}
-
+DIFFICULTY_LABELS = {
+    1: "CADET (TIER 1)",
+    2: "PILOT (TIER 2)",
+    3: "COMMANDER (TIER 3)",
+    4: "FLIGHT DIRECTOR (TIER 4)",
+    5: "VETERAN ASTRONAUT (TIER 5)"
+}
 
 class CampaignScene:
     WIDTH  = 1024
@@ -43,47 +45,38 @@ class CampaignScene:
         self.filter_type: Optional[str] = None
         self.page: int = 0
         self.page_size: int = 6
-        self.t: float = 0.0   # animation clock
+        self.t: float = 0.0
 
         # Fonts
-        self.font_title  = pygame.font.SysFont("arial", 28, bold=True)
-        self.font_sub    = pygame.font.SysFont("arial", 14, bold=True)
-        self.font_card_t = pygame.font.SysFont("arial", 14, bold=True)
-        self.font_card_b = pygame.font.SysFont("arial", 12)
-        self.font_tiny   = pygame.font.SysFont("arial", 11)
+        self.font_title  = get_font(22, bold=True, mono=True)
+        self.font_sub    = get_font(13, bold=True, mono=True)
+        self.font_card_t = get_font(13, bold=True, mono=True)
+        self.font_card_b = get_font(11, bold=False, mono=True)
+        self.font_tiny   = get_font(10, bold=True, mono=True)
 
-        # Star field
         self.stars = [
             (random.randint(0, self.WIDTH), random.randint(0, self.HEIGHT),
-             random.random(), random.uniform(0.8, 2.5))
-            for _ in range(180)
-        ]
-        # Floating planet decorations
-        self.planets = [
-            {'x': 920, 'y': 80,  'r': 48, 'col': (255, 130, 30),  'ring': True},
-            {'x': 80,  'y': 600, 'r': 32, 'col': (100, 220, 255),  'ring': False},
-            {'x': 960, 'y': 560, 'r': 22, 'col': (200, 80, 255),   'ring': False},
+             random.random(), random.uniform(0.6, 2.0))
+            for _ in range(160)
         ]
 
-        # Filter buttons row
         self.filter_buttons: List[Button] = []
         self._build_filter_buttons()
 
-        # Pagination
         self.btn_prev = Button(
-            pygame.Rect(40, 658, 140, 42),
-            "◄ PREV", on_click=self._prev_page,
-            color=COLOR_CYAN, bg_color=(5, 25, 65), font_size=15,
+            pygame.Rect(40, 658, 140, 38),
+            "◄ PREV PAGE", on_click=self._prev_page,
+            color=COLOR_CYAN, bg_color=(15, 23, 42), font_size=13,
         )
         self.btn_next = Button(
-            pygame.Rect(844, 658, 140, 42),
-            "NEXT ►", on_click=self._next_page,
-            color=COLOR_CYAN, bg_color=(5, 25, 65), font_size=15,
+            pygame.Rect(844, 658, 140, 38),
+            "NEXT PAGE ►", on_click=self._next_page,
+            color=COLOR_CYAN, bg_color=(15, 23, 42), font_size=13,
         )
         self.btn_audio = Button(
-            pygame.Rect(870, 22, 130, 34),
-            "🔊 SOUND: ON", on_click=self._toggle_audio,
-            color=COLOR_TEXT_DIM, bg_color=(8, 18, 48), font_size=12,
+            pygame.Rect(860, 22, 140, 32),
+            "AUDIO: ACTIVE", on_click=self._toggle_audio,
+            color=COLOR_TEXT_DIM, bg_color=(15, 23, 42), font_size=11,
         )
 
         self.card_buttons: List[Button] = []
@@ -91,238 +84,192 @@ class CampaignScene:
 
     def _build_filter_buttons(self):
         filters = [
-            ("ALL 🌌", None),
-            ("🚀 LAUNCH",   "launch"),
-            ("🛸 DOCKING",  "docking"),
-            ("🌑 LANDER",   "lander"),
-            ("🤖 ROVER",    "rover"),
-            ("🔭 SCOPE",    "telescope"),
-            ("☄️ DEEP",     "deepspace"),
+            ("ALL MISSIONS", None),
+            ("LAUNCH",       "launch"),
+            ("DOCKING",      "docking"),
+            ("LANDER",       "lander"),
+            ("ROVER",        "rover"),
+            ("OBSERVATORY",  "telescope"),
+            ("DEEP SPACE",   "deepspace"),
         ]
-        self.filter_buttons = []
+        self.filter_buttons.clear()
         x = 40
-        for label, f_type in filters:
-            col = COLOR_CYAN if self.filter_type == f_type else COLOR_TEXT_DIM
+        btn_w = 126
+        for label, ftype in filters:
+            rect = pygame.Rect(x, 90, btn_w, 32)
             btn = Button(
-                pygame.Rect(x, 78, 120, 32),
-                label,
-                on_click=lambda t=f_type: self._set_filter(t),
-                color=col, bg_color=(5, 20, 60), font_size=11,
+                rect, label,
+                on_click=lambda t=ftype: self._set_filter(t),
+                color=COLOR_CYAN if self.filter_type == ftype else COLOR_TEXT_DIM,
+                bg_color=(15, 23, 42) if self.filter_type == ftype else (10, 16, 26),
+                font_size=11,
             )
             self.filter_buttons.append(btn)
-            x += 128
+            x += btn_w + 10
 
-    def _set_filter(self, f_type: Optional[str]):
-        self.filter_type = f_type
+    def _set_filter(self, ftype: Optional[str]):
+        self.filter_type = ftype
         self.page = 0
         sound_engine.play('click')
         self._build_filter_buttons()
         self._update_cards()
 
-    def _get_filtered(self) -> List[Mission]:
-        if self.filter_type:
-            return [m for m in self.missions if m.game_type == self.filter_type]
-        return self.missions
+    def _get_filtered_missions(self) -> List[Mission]:
+        if not self.filter_type:
+            return self.missions
+        return [m for m in self.missions if m.game_type == self.filter_type]
 
     def _update_cards(self):
-        filtered = self._get_filtered()
-        total_pages = max(1, math.ceil(len(filtered) / self.page_size))
-        self.page = min(self.page, total_pages - 1)
-        page_missions = filtered[self.page * self.page_size: (self.page + 1) * self.page_size]
+        filtered = self._get_filtered_missions()
+        start = self.page * self.page_size
+        page_missions = filtered[start:start + self.page_size]
 
-        self.card_buttons = []
+        self.card_buttons.clear()
+        card_w, card_h = 448, 148
+        positions = [
+            (40,  140), (536, 140),
+            (40,  304), (536, 304),
+            (40,  468), (536, 468),
+        ]
+
         for i, mission in enumerate(page_missions):
-            col = i % 2
-            row = i // 2
-            cx = 28 + col * 492
-            cy = 122 + row * 176
+            pos = positions[i]
+            rect = pygame.Rect(pos[0], pos[1], card_w, card_h)
             btn = Button(
-                pygame.Rect(cx, cy, 480, 164),
-                mission.id,
-                on_click=lambda m=mission: self._select(m),
-                color=TYPE_META.get(mission.game_type, ('', COLOR_CYAN, ''))[1],
-                bg_color=(8, 20, 55),
-                font_size=13,
+                rect, "",
+                on_click=lambda m=mission: self._select_mission(m),
+                bg_color=(11, 19, 32),
             )
-            btn._mission = mission
             self.card_buttons.append(btn)
 
-    def _select(self, mission: Mission):
-        sound_engine.play('quindar')
+    def _select_mission(self, mission: Mission):
+        sound_engine.play('click')
         self.on_select_mission(mission)
 
     def _prev_page(self):
-        self.page = max(0, self.page - 1)
-        sound_engine.play('click')
-        self._update_cards()
+        if self.page > 0:
+            self.page -= 1
+            sound_engine.play('click')
+            self._update_cards()
 
     def _next_page(self):
-        filtered = self._get_filtered()
-        max_page = max(0, math.ceil(len(filtered) / self.page_size) - 1)
-        self.page = min(max_page, self.page + 1)
-        sound_engine.play('click')
-        self._update_cards()
+        filtered = self._get_filtered_missions()
+        max_page = (len(filtered) - 1) // self.page_size
+        if self.page < max_page:
+            self.page += 1
+            sound_engine.play('click')
+            self._update_cards()
 
     def _toggle_audio(self):
-        sound_engine.muted = not sound_engine.muted
-        self.btn_audio.text = "🔊 SOUND: ON" if not sound_engine.muted else "🔇 SOUND: OFF"
+        sound_engine.toggle_mute()
+        is_muted = sound_engine.is_muted()
+        self.btn_audio.text = "AUDIO: MUTED" if is_muted else "AUDIO: ACTIVE"
+        self.btn_audio.color = COLOR_RED if is_muted else COLOR_TEXT_DIM
 
     def handle_event(self, event: pygame.event.Event):
-        self.btn_prev.handle_event(event)
-        self.btn_next.handle_event(event)
-        self.btn_audio.handle_event(event)
         for btn in self.filter_buttons:
-            btn.handle_event(event)
+            if btn.handle_event(event):
+                return
         for btn in self.card_buttons:
-            btn.handle_event(event)
+            if btn.handle_event(event):
+                return
+        if self.btn_prev.handle_event(event):
+            return
+        if self.btn_next.handle_event(event):
+            return
+        if self.btn_audio.handle_event(event):
+            return
 
     def update(self, dt: float):
         self.t += dt
         for btn in self.filter_buttons:
             btn.update(dt)
+        for btn in self.card_buttons:
+            btn.update(dt)
         self.btn_prev.update(dt)
         self.btn_next.update(dt)
         self.btn_audio.update(dt)
-        for btn in self.card_buttons:
-            btn.update(dt)
 
     def draw(self, surface: pygame.Surface):
-        # ── Space background ─────────────────────────────────────────────
+        # 1. Background Void
         surface.fill(COLOR_BG)
         draw_star_field(surface, self.stars, self.t)
 
-        # Floating decorative planets
-        for p in self.planets:
-            bob = math.sin(self.t * 0.6 + p['x']) * 5
-            px, py = int(p['x']), int(p['y'] + bob)
-            pygame.draw.circle(surface, p['col'], (px, py), p['r'])
-            # Shading
-            shade = pygame.Surface((p['r']*2, p['r']*2), pygame.SRCALPHA)
-            pygame.draw.circle(shade, (0,0,0,70), (p['r']+4, p['r']-4), p['r'])
-            surface.blit(shade, (px - p['r'], py - p['r']))
-            if p.get('ring'):
-                ring_r = int(p['r'] * 1.6)
-                pygame.draw.ellipse(surface, (*p['col'], 120),
-                    (px - ring_r, py - 10, ring_r*2, 20), 3)
+        # 2. Header Panel
+        draw_hud_panel(surface, pygame.Rect(12, 12, self.WIDTH - 24, 64), title="NASA FLIGHT OPERATIONS DIRECTORATE")
+        
+        title_txt = "NASA MISSION CAMPAIGN MANIFEST"
+        surface.blit(self.font_title.render(title_txt, True, COLOR_CYAN), (26, 26))
 
-        # ── Header ───────────────────────────────────────────────────────
-        hdr = pygame.Surface((self.WIDTH, 70), pygame.SRCALPHA)
-        hdr.fill((4, 12, 45, 220))
-        surface.blit(hdr, (0, 0))
-        pygame.draw.line(surface, COLOR_PANEL_BORDER, (0, 70), (self.WIDTH, 70), 2)
+        # Progress & Total Manifest
+        completed_count = storage.total_completed()
+        pct = storage.get_progress_pct(len(self.missions))
+        prog_str = f"76 HISTORICAL FLIGHTS // COMPLETED: {completed_count}/{len(self.missions)} ({pct}%)"
+        surface.blit(self.font_sub.render(prog_str, True, COLOR_EMERALD), (28, 50))
 
-        # Pulsing title
-        pulse = abs(math.sin(self.t * 1.5)) * 30
-        title_col = (
-            min(255, 0 + int(pulse)),
-            min(255, 200 + int(pulse // 2)),
-            255,
-        )
-        title_surf = self.font_title.render("🚀 Jr_AstroCamp · MISSION CONTROL", True, title_col)
-        surface.blit(title_surf, (24, 18))
-
-        # Progress counter
-        completed = sum(1 for m in self.missions if storage.is_completed(m.id))
-        prog_surf = self.font_sub.render(
-            f"✅ {completed} / {len(self.missions)} MISSIONS COMPLETED", True, COLOR_GOLD)
-        surface.blit(prog_surf, (24, 52))
-
-        self.btn_audio.draw(surface)
-
-        # ── Filter Row ───────────────────────────────────────────────────
+        # 3. Controls
         for btn in self.filter_buttons:
             btn.draw(surface)
+        self.btn_audio.draw(surface)
 
-        pygame.draw.line(surface, COLOR_PANEL_BORDER, (0, 118), (self.WIDTH, 118), 1)
+        # 4. Mission Cards
+        filtered = self._get_filtered_missions()
+        start = self.page * self.page_size
+        page_missions = filtered[start:start + self.page_size]
 
-        # ── Mission Cards ────────────────────────────────────────────────
-        filtered = self._get_filtered()
-        total_pages = max(1, math.ceil(len(filtered) / self.page_size))
-        page_missions = filtered[self.page * self.page_size: (self.page + 1) * self.page_size]
+        for i, mission in enumerate(page_missions):
+            btn = self.card_buttons[i]
+            btn.draw(surface)
+            r = btn.rect
 
-        for i, (btn, mission) in enumerate(zip(self.card_buttons, page_missions)):
-            col = i % 2
-            row = i // 2
-            cx = 28 + col * 492
-            cy = 122 + row * 176
+            # Draw card inner content
+            completed = storage.is_completed(mission.id)
+            type_label, type_col, discipline = TYPE_META.get(mission.game_type, ("MISSION", COLOR_CYAN, "FLIGHT"))
 
-            # Card background
-            card_rect = pygame.Rect(cx, cy, 480, 164)
-            is_done = storage.is_completed(mission.id)
+            # Card Header Bar
+            pygame.draw.rect(surface, (15, 23, 42), (r.x, r.y, r.width, 30), border_radius=3)
+            pygame.draw.line(surface, COLOR_PANEL_BORDER, (r.x, r.y + 30), (r.x + r.width, r.y + 30), 1)
 
-            # Card bg with subtle gradient effect
-            card_surf = pygame.Surface((480, 164), pygame.SRCALPHA)
-            base_col = (8, 20, 55) if not is_done else (5, 40, 20)
-            card_surf.fill((*base_col, 230))
-            surface.blit(card_surf, (cx, cy))
+            # Discipline tag
+            surface.blit(self.font_tiny.render(f"[{discipline}]", True, type_col), (r.x + 12, r.y + 8))
 
-            # Hover glow
-            if btn.hovered:
-                glow = pygame.Surface((480, 164), pygame.SRCALPHA)
-                type_col = TYPE_META.get(mission.game_type, ('', COLOR_CYAN, ''))[1]
-                glow.fill((*type_col, 25))
-                surface.blit(glow, (cx, cy))
+            # Mission ID and Era Year (Placed cleanly in center to avoid overlap with FLOWN badge)
+            meta_str = f"{mission.id} · {mission.year}"
+            surface.blit(self.font_tiny.render(meta_str, True, COLOR_TEXT_DIM), (r.x + 175, r.y + 8))
 
-            # Border
-            border_col = (0, 200, 80) if is_done else TYPE_META.get(mission.game_type, ('', COLOR_CYAN, ''))[1]
-            bw = 2 if not btn.hovered else 3
-            pygame.draw.rect(surface, border_col, card_rect, bw, border_radius=12)
+            # Completion Checkmark
+            if completed:
+                pygame.draw.rect(surface, (6, 95, 70), (r.right - 76, r.y + 4, 66, 22), border_radius=2)
+                surface.blit(self.font_tiny.render("FLOWN ✓", True, COLOR_EMERALD), (r.right - 69, r.y + 8))
 
-            # Type emoji + name header bar
-            emoji, type_col, type_label = TYPE_META.get(mission.game_type, ('🚀', COLOR_CYAN, 'LAUNCH'))
-            pygame.draw.rect(surface, (*type_col, 80), (cx, cy, 480, 32), border_radius=12)
+            # Mission Name
+            name_col = (255, 255, 255) if btn.hovered else COLOR_TEXT
+            surface.blit(self.font_card_t.render(mission.name[:38], True, name_col), (r.x + 12, r.y + 38))
 
-            type_surf = self.font_sub.render(f"{emoji}  {type_label}", True, type_col)
-            surface.blit(type_surf, (cx + 12, cy + 8))
+            # Program & Mission Type
+            veh_str = f"PROGRAM: {mission.program} // TYPE: {mission.mission_type}"
+            surface.blit(self.font_card_b.render(veh_str, True, COLOR_TEXT_DIM), (r.x + 12, r.y + 62))
 
-            # Completed badge
-            if is_done:
-                done_surf = self.font_sub.render("✅ COMPLETED", True, COLOR_EMERALD)
-                surface.blit(done_surf, (cx + 480 - done_surf.get_width() - 10, cy + 8))
+            # Mission Objective Brief
+            desc_snip = mission.objective[:72] + "..." if len(mission.objective) > 72 else mission.objective
+            surface.blit(self.font_card_b.render(desc_snip, True, (160, 175, 195)), (r.x + 12, r.y + 82))
 
-            # Mission name
-            name = mission.name if len(mission.name) <= 42 else mission.name[:40] + "…"
-            name_surf = self.font_card_t.render(name, True, COLOR_TEXT)
-            surface.blit(name_surf, (cx + 12, cy + 40))
+            # Difficulty tier badge
+            diff_label = DIFFICULTY_LABELS.get(mission.difficulty, f"TIER {mission.difficulty}")
+            surface.blit(self.font_tiny.render(f"RATING: {diff_label}", True, COLOR_GOLD), (r.x + 12, r.y + 116))
 
-            # Year + difficulty stars
-            diff_str = AGE_LABELS.get(mission.difficulty, "⭐")
-            info_surf = self.font_tiny.render(
-                f"📅 {mission.year}  |  {diff_str}  |  #{mission.id}", True, COLOR_TEXT_DIM)
-            surface.blit(info_surf, (cx + 12, cy + 60))
+            # High Score if completed
+            score = storage.scores.get(mission.id, 0)
+            if score > 0:
+                surface.blit(self.font_tiny.render(f"SCORE: {score} PTS", True, COLOR_EMERALD), (r.right - 130, r.y + 116))
 
-            # Objective (truncated)
-            obj = mission.objective[:95] + "…" if len(mission.objective) > 95 else mission.objective
-            obj_surf = self.font_card_b.render(obj, True, (180, 195, 230))
-            surface.blit(obj_surf, (cx + 12, cy + 82))
+        # 5. Pagination Bar
+        total_pages = max(1, (len(filtered) - 1) // self.page_size + 1)
+        page_str = f"PAGE {self.page + 1} OF {total_pages} // {len(filtered)} MANIFEST RECORDS"
+        p_surf = self.font_sub.render(page_str, True, COLOR_TEXT_DIM)
+        surface.blit(p_surf, (self.WIDTH // 2 - p_surf.get_width() // 2, 668))
 
-            # Best score
-            if is_done:
-                best = storage.scores.get(mission.id, 0)
-                sc_surf = self.font_sub.render(f"🏆 HIGH SCORE: {best} PTS", True, COLOR_GOLD)
-                surface.blit(sc_surf, (cx + 12, cy + 106))
-            else:
-                # "Click to play!" hint
-                play_surf = self.font_sub.render("▶  CLICK TO START MISSION!", True, type_col)
-                surface.blit(play_surf, (cx + 12, cy + 106))
-
-            # Progress bar for score
-            if is_done:
-                best = storage.scores.get(mission.id, 0)
-                frac = min(1.0, best / 1000.0)
-                bar_w = int(450 * frac)
-                pygame.draw.rect(surface, (20, 40, 80), (cx+12, cy+140, 450, 10), border_radius=5)
-                if bar_w > 0:
-                    pygame.draw.rect(surface, COLOR_GOLD, (cx+12, cy+140, bar_w, 10), border_radius=5)
-
-        # ── Pagination bar ───────────────────────────────────────────────
-        page_bg = pygame.Surface((self.WIDTH, 56), pygame.SRCALPHA)
-        page_bg.fill((4, 12, 40, 200))
-        surface.blit(page_bg, (0, 650))
-
-        self.btn_prev.draw(surface)
-        self.btn_next.draw(surface)
-
-        page_label = f"📄  PAGE {self.page + 1} / {total_pages}  ·  {len(filtered)} MISSIONS"
-        pl_surf = self.font_sub.render(page_label, True, COLOR_TEXT_DIM)
-        surface.blit(pl_surf, (self.WIDTH//2 - pl_surf.get_width()//2, 672))
+        if self.page > 0:
+            self.btn_prev.draw(surface)
+        if self.page < total_pages - 1:
+            self.btn_next.draw(surface)

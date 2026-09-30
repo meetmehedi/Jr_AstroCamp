@@ -1,7 +1,3 @@
-// ============================================================
-// MissionGameModal — Full-screen interactive NASA Mission simulator
-// Bridges React UI with Phaser 3 canvas for all 76 campaign missions
-// ============================================================
 import React, { useEffect, useRef, useState } from 'react';
 import confetti from 'canvas-confetti';
 import {
@@ -20,9 +16,12 @@ import {
   ExternalLink,
   Bot,
   Eye,
+  Layers,
+  Box,
 } from 'lucide-react';
 import { MISSION_GAME_DATA, type MissionGameConfig } from '../game/missionGameData';
 import { startPhaserMissionGame, destroyPhaserGame } from '../game/PhaserGameManager';
+import { ThreeMissionSimulator } from './ThreeMissionSimulator';
 
 interface MissionGameModalProps {
   missionId: string;
@@ -43,6 +42,7 @@ export const MissionGameModal: React.FC<MissionGameModalProps> = ({
   const phaserGameRef = useRef<any>(null);
 
   const [missionState, setMissionState] = useState<'briefing' | 'playing' | 'success' | 'failure'>('briefing');
+  const [engineMode, setEngineMode] = useState<'3d' | '2d'>('3d');
   const [score, setScore] = useState<number>(0);
   const [failureReason, setFailureReason] = useState<string>('');
   const [showAstronautModel, setShowAstronautModel] = useState<boolean>(false);
@@ -66,40 +66,29 @@ export const MissionGameModal: React.FC<MissionGameModalProps> = ({
   const launchSimulation = () => {
     setMissionState('playing');
 
-    // Give React a frame to mount the container DOM
-    setTimeout(() => {
-      if (!containerRef.current) return;
-
-      // Clear any prior game
-      if (phaserGameRef.current) {
-        destroyPhaserGame(phaserGameRef.current);
-        phaserGameRef.current = null;
-      }
-
-      containerRef.current.innerHTML = '';
-
-      const game = startPhaserMissionGame(containerRef.current, mission, {
-        onSuccess: (finalScore) => {
-          setScore(finalScore);
-          setMissionState('success');
-          onCompleteMission(mission.id, finalScore);
-
-          // Confetti celebration
-          confetti({
-            particleCount: 120,
-            spread: 80,
-            origin: { y: 0.6 },
-            colors: ['#38bdf8', '#818cf8', '#34d399', '#fbbf24'],
-          });
-        },
-        onFailure: (reason) => {
-          setFailureReason(reason);
-          setMissionState('failure');
-        },
-      });
-
-      phaserGameRef.current = game;
-    }, 50);
+    if (engineMode === '2d') {
+      setTimeout(() => {
+        if (!containerRef.current) return;
+        if (phaserGameRef.current) {
+          destroyPhaserGame(phaserGameRef.current);
+          phaserGameRef.current = null;
+        }
+        containerRef.current.innerHTML = '';
+        const game = startPhaserMissionGame(containerRef.current, mission, {
+          onSuccess: (finalScore) => {
+            setScore(finalScore);
+            setMissionState('success');
+            onCompleteMission(mission.id, finalScore);
+            confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } });
+          },
+          onFailure: (reason) => {
+            setFailureReason(reason);
+            setMissionState('failure');
+          },
+        });
+        phaserGameRef.current = game;
+      }, 50);
+    }
   };
 
   const handleRetry = () => {
@@ -253,9 +242,9 @@ export const MissionGameModal: React.FC<MissionGameModalProps> = ({
                 <div className="p-4 rounded-xl bg-slate-800/40 border border-slate-700/50 space-y-2">
                   <h4 className="text-xs font-mono text-slate-400 tracking-wider">FLIGHT CONTROLS</h4>
                   <ul className="text-xs text-slate-300 space-y-1.5 font-mono">
-                    <li>• <span className="text-cyan-300">W / UP ARROW</span>: Thrust / Forward / Pitch Up</li>
-                    <li>• <span className="text-cyan-300">A/D or LEFT/RIGHT</span>: Attitude Steering / Yaw</li>
-                    <li>• <span className="text-cyan-300">SPACEBAR / MOUSE</span>: Boost / Precision Reticle / Maneuver</li>
+                    <li>• <span className="text-cyan-300">W / S or UP/DOWN</span>: Throttle Command</li>
+                    <li>• <span className="text-cyan-300">A / D or LEFT/RIGHT</span>: Gimbal Pitch / Steering</li>
+                    <li>• <span className="text-cyan-300">SPACEBAR</span>: Stage Separation / Booster MECO</li>
                   </ul>
                 </div>
 
@@ -267,24 +256,73 @@ export const MissionGameModal: React.FC<MissionGameModalProps> = ({
                 </div>
               </div>
 
+              {/* Simulation Mode Toggle (3D Photorealistic WebGL vs 2D Tactical) */}
+              <div className="flex items-center justify-between p-3.5 bg-slate-950/80 border border-cyan-500/30 rounded-xl">
+                <div className="flex items-center gap-2 text-xs font-mono">
+                  <Box className="w-4 h-4 text-cyan-400" />
+                  <span className="text-slate-300 font-bold">GRAPHICS ENGINE:</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setEngineMode('3d')}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold flex items-center gap-1.5 transition ${
+                      engineMode === '3d'
+                        ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-slate-950 shadow-md shadow-cyan-500/25'
+                        : 'bg-slate-800 text-slate-400 hover:text-slate-200'
+                    }`}
+                  >
+                    <Sparkles className="w-3.5 h-3.5" /> 3D Photorealistic Engine (WebGL)
+                  </button>
+                  <button
+                    onClick={() => setEngineMode('2d')}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold flex items-center gap-1.5 transition ${
+                      engineMode === '2d'
+                        ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/25'
+                        : 'bg-slate-800 text-slate-400 hover:text-slate-200'
+                    }`}
+                  >
+                    <Layers className="w-3.5 h-3.5" /> 2D Tactical Engine
+                  </button>
+                </div>
+              </div>
+
               {/* Action Button */}
               <div className="flex items-center justify-center pt-2">
                 <button
                   onClick={launchSimulation}
-                  className="px-8 py-3.5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-bold tracking-wider rounded-xl shadow-lg shadow-cyan-500/25 flex items-center gap-2 transform active:scale-95 transition"
+                  className="px-8 py-3.5 bg-gradient-to-r from-cyan-500 via-teal-400 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-black tracking-wider rounded-xl shadow-lg shadow-cyan-500/30 flex items-center gap-2 transform active:scale-95 transition text-sm"
                 >
                   <Play className="w-5 h-5 fill-current" />
-                  INITIATE MISSION SIMULATION
+                  LAUNCH 3D MISSION SIMULATION
                 </button>
               </div>
             </div>
           )}
 
-          {/* 2. PLAYING STATE (Phaser 3 Canvas Container) */}
+          {/* 2. PLAYING STATE */}
+          {missionState === 'playing' && engineMode === '3d' && (
+            <div className="w-full">
+              <ThreeMissionSimulator
+                mission={mission}
+                onSuccess={(finalScore) => {
+                  setScore(finalScore);
+                  setMissionState('success');
+                  onCompleteMission(mission.id, finalScore);
+                }}
+                onFailure={(reason) => {
+                  setFailureReason(reason);
+                  setMissionState('failure');
+                }}
+                onExit={() => setMissionState('briefing')}
+              />
+            </div>
+          )}
+
+          {/* 2B. 2D Phaser Canvas Container */}
           <div
             ref={containerRef}
             className={`w-full h-[520px] max-w-[800px] flex items-center justify-center rounded-xl overflow-hidden shadow-2xl border border-slate-800 ${
-              missionState === 'playing' ? 'block' : 'hidden'
+              missionState === 'playing' && engineMode === '2d' ? 'block' : 'hidden'
             }`}
           />
 

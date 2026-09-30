@@ -42,6 +42,8 @@ import {
   Users,
   Home,
   Gamepad2,
+  Menu,
+  X,
 } from 'lucide-react';
 
 const INITIAL_GAME_STATE: GameState = {
@@ -112,6 +114,7 @@ export const App: React.FC = () => {
   const [isNasaModalOpen, setIsNasaModalOpen] = useState(false);
   const [isTeacherModalOpen, setIsTeacherModalOpen] = useState(false);
   const [isAIModalOpen, setIsAIModalOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // 76 Playable NASA Mission Games State
   const [completedMissions, setCompletedMissions] = useState<string[]>(() => {
@@ -349,136 +352,130 @@ export const App: React.FC = () => {
           </div>
           <div>
             <div className="brand-title">JR_ASTROCAMP</div>
-            <div className="brand-subtitle">Junior Astronaut Mission Trainer · Team Mysterio · Space Apps 2026</div>
+            <div className="brand-subtitle nav-subtitle-desktop">Junior Astronaut Mission Trainer · Team Mysterio · Space Apps 2026</div>
           </div>
         </div>
 
-        {/* Target Age Group Tier Selector (Ages 3 to 19) */}
+        {/* Target Age Group Tier Selector (Ages 3 to 19) — Desktop Only */}
         <div className="hidden xl:flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-900/90 border border-slate-700/60 text-xs flex-shrink-0 whitespace-nowrap">
-          <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider pl-1">Target Age:</span>
+          <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider pl-1">Age:</span>
           <button
             onClick={() => handleSelectDifficulty('CADET')}
             className={`px-2.5 py-1 rounded-lg font-mono text-xs font-semibold whitespace-nowrap transition ${
-              gameState.difficultyMode === 'CADET'
-                ? 'bg-emerald-500 text-slate-950 shadow-sm'
-                : 'text-emerald-400 hover:bg-slate-800'
+              gameState.difficultyMode === 'CADET' ? 'bg-emerald-500 text-slate-950 shadow-sm' : 'text-emerald-400 hover:bg-slate-800'
             }`}
-            title="Cadet Mode: Tailored for young learners ages 3–7 with visual cues and assisted controls"
-          >
-            🧒 Cadet (3–7)
-          </button>
+          >🧒 3–7</button>
           <button
             onClick={() => handleSelectDifficulty('EXPLORER')}
             className={`px-2.5 py-1 rounded-lg font-mono text-xs font-semibold whitespace-nowrap transition ${
-              gameState.difficultyMode === 'EXPLORER'
-                ? 'bg-cyan-500 text-slate-950 shadow-sm'
-                : 'text-cyan-400 hover:bg-slate-800'
+              gameState.difficultyMode === 'EXPLORER' ? 'bg-cyan-500 text-slate-950 shadow-sm' : 'text-cyan-400 hover:bg-slate-800'
             }`}
-            title="Explorer Mode: Tailored for middle learners ages 8–13 with interactive science & rovers"
-          >
-            🚀 Explorer (8–13)
-          </button>
+          >🚀 8–13</button>
           <button
             onClick={() => handleSelectDifficulty('COMMANDER')}
             className={`px-2.5 py-1 rounded-lg font-mono text-xs font-semibold whitespace-nowrap transition ${
-              gameState.difficultyMode === 'COMMANDER'
-                ? 'bg-violet-500 text-white shadow-sm'
-                : 'text-violet-400 hover:bg-slate-800'
+              gameState.difficultyMode === 'COMMANDER' ? 'bg-violet-500 text-white shadow-sm' : 'text-violet-400 hover:bg-slate-800'
             }`}
-            title="Commander Mode: Tailored for advanced teens ages 14–19 with realistic engineering trade-offs"
-          >
-            🛰️ Commander (14–19)
-          </button>
+          >🛰️ 14–19</button>
         </div>
 
-        <div className="nav-actions">
-          {/* Home / Landing Page */}
-          <button
-            onClick={() => {
-              if (typeof window !== 'undefined') {
-                sessionStorage.removeItem('astro_camp_launched');
-              }
-              setHasLaunched(false);
-              soundFx.playClick(600);
-            }}
-            className="nav-link-btn"
-            title="Return to Astro Camp Overview"
-          >
-            <Home size={15} className="text-slate-400" />
-            <span>Home</span>
+        {/* Desktop Nav Actions */}
+        <div className="nav-actions nav-desktop-only">
+          <button onClick={() => { if (typeof window !== 'undefined') sessionStorage.removeItem('astro_camp_launched'); setHasLaunched(false); soundFx.playClick(600); }} className="nav-link-btn" title="Home">
+            <Home size={15} className="text-slate-400" /><span>Home</span>
           </button>
-
-          {/* Learning Hub */}
-          <button
-            onClick={() => { setIsLearningHubOpen(true); soundFx.playClick(700); }}
-            className="nav-link-btn"
-            title="Astro Camp Learning Hub"
-          >
-            <BookOpen size={15} className="text-violet-400" />
-            <span>Learning Hub</span>
+          <button onClick={() => { setIsLearningHubOpen(true); soundFx.playClick(700); }} className="nav-link-btn">
+            <BookOpen size={15} className="text-violet-400" /><span>Learn</span>
           </button>
-
-          {/* Planetary Mission Map */}
-          <button
-            onClick={() => { setIsPlanetaryMapOpen(true); soundFx.playClick(700); }}
-            className="nav-link-btn"
-            title="Planetary Mission Map"
-          >
-            <Compass size={15} className="text-violet-400" />
-            <span>Missions</span>
+          <button onClick={() => { setIsPlanetaryMapOpen(true); soundFx.playClick(700); }} className="nav-link-btn">
+            <Compass size={15} className="text-violet-400" /><span>Missions</span>
           </button>
-
-          {/* 76 NASA Games Campaign */}
           <button
             onClick={() => { setIsCampaignMapOpen(true); soundFx.playClick(850); }}
             className="nav-link-btn"
-            style={{
-              background: 'linear-gradient(90deg, rgba(6,182,212,0.2), rgba(59,130,246,0.2))',
-              border: '1px solid rgba(6,182,212,0.4)',
-              color: '#38bdf8',
-              fontWeight: 700,
-            }}
-            title="NASA Mission Games Campaign — 76 Playable Missions"
+            style={{ background: 'linear-gradient(90deg, rgba(6,182,212,0.2), rgba(59,130,246,0.2))', border: '1px solid rgba(6,182,212,0.4)', color: '#38bdf8', fontWeight: 700 }}
           >
-            <Gamepad2 size={15} className="text-cyan-400" />
-            <span>76 Games ({completedMissions.length}/76)</span>
+            <Gamepad2 size={15} className="text-cyan-400" /><span>76 Games ({completedMissions.length}/76)</span>
           </button>
-
-          <button
-            onClick={() => {
-              const nextMuted = soundFx.toggleMute();
-              speechEngine.setMuted(nextMuted);
-              setIsMuted(nextMuted);
-            }}
-            className="nav-link-btn"
-            title={isMuted ? "Unmute Audio FX & Voice" : "Mute Audio FX & Voice"}
-          >
+          <button onClick={() => { const m = soundFx.toggleMute(); speechEngine.setMuted(m); setIsMuted(m); }} className="nav-link-btn">
             {isMuted ? <VolumeX size={15} className="text-rose-400" /> : <Volume2 size={15} className="text-emerald-400" />}
-            <span>{isMuted ? "Muted" : "Audio"}</span>
+            <span>{isMuted ? 'Muted' : 'Audio'}</span>
           </button>
-          <button onClick={() => setIsNasaModalOpen(true)} className="nav-link-btn">
-            <Database size={15} className="text-emerald-400" />
-            <span>NASA Data</span>
+          <button onClick={() => setIsAboutOpen(true)} className="nav-link-btn">
+            <Users size={15} className="text-violet-400" /><span>About</span>
           </button>
-          <button onClick={() => setIsTeacherModalOpen(true)} className="nav-link-btn">
-            <GraduationCap size={15} className="text-cyan-400" />
-            <span>Curriculum</span>
+          <button onClick={handleRestart} className="nav-link-btn">
+            <RotateCcw size={15} /><span>Reset</span>
           </button>
-          <button onClick={() => setIsAIModalOpen(true)} className="nav-link-btn">
-            <Bot size={15} className="text-amber-400" />
-            <span>AI Disclosure</span>
+        </div>
+
+        {/* Mobile: Quick Actions + Hamburger */}
+        <div className="nav-mobile-right">
+          {/* Quick-access game button always visible */}
+          <button
+            onClick={() => { setIsCampaignMapOpen(true); soundFx.playClick(850); }}
+            className="nav-link-btn nav-game-btn-mobile"
+            style={{ background: 'linear-gradient(90deg, rgba(6,182,212,0.2), rgba(59,130,246,0.2))', border: '1px solid rgba(6,182,212,0.4)', color: '#38bdf8', fontWeight: 700, padding: '6px 10px' }}
+          >
+            <Gamepad2 size={14} className="text-cyan-400" />
+            <span className="nav-game-label">Play ({completedMissions.length}/76)</span>
           </button>
-          {/* About Team Mysterio */}
-          <button onClick={() => setIsAboutOpen(true)} className="nav-link-btn" title="About Team Mysterio">
-            <Users size={15} className="text-violet-400" />
-            <span>About</span>
-          </button>
-          <button onClick={handleRestart} className="nav-link-btn" title="Reset Simulation">
-            <RotateCcw size={15} />
-            <span>Reset</span>
+          <button
+            onClick={() => setIsMobileMenuOpen((v) => !v)}
+            className="nav-hamburger"
+            aria-label="Toggle menu"
+          >
+            {isMobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
           </button>
         </div>
       </header>
+
+      {/* Mobile Dropdown Menu */}
+      {isMobileMenuOpen && (
+        <div className="mobile-menu-overlay" onClick={() => setIsMobileMenuOpen(false)}>
+          <nav className="mobile-menu-panel" onClick={(e) => e.stopPropagation()}>
+            {/* Age Mode Selector */}
+            <div className="mobile-menu-section">
+              <div className="mobile-menu-section-label">Age Mode</div>
+              <div className="mobile-age-btns">
+                {(['CADET', 'EXPLORER', 'COMMANDER'] as const).map((mode) => (
+                  <button
+                    key={mode}
+                    onClick={() => { handleSelectDifficulty(mode); setIsMobileMenuOpen(false); }}
+                    className={`mobile-age-btn ${gameState.difficultyMode === mode ? 'mobile-age-btn-active' : ''}`}
+                  >
+                    {mode === 'CADET' ? '🧒 Cadet (3–7)' : mode === 'EXPLORER' ? '🚀 Explorer (8–13)' : '🛰️ Commander (14–19)'}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="mobile-menu-divider" />
+            {/* Nav Links */}
+            {[
+              { icon: <Home size={16} />, label: 'Home', color: '#94a3b8', action: () => { if (typeof window !== 'undefined') sessionStorage.removeItem('astro_camp_launched'); setHasLaunched(false); } },
+              { icon: <BookOpen size={16} />, label: 'Learning Hub', color: '#a78bfa', action: () => setIsLearningHubOpen(true) },
+              { icon: <Compass size={16} />, label: 'Mission Map', color: '#a78bfa', action: () => setIsPlanetaryMapOpen(true) },
+              { icon: <Gamepad2 size={16} />, label: `76 Mission Games (${completedMissions.length}/76)`, color: '#38bdf8', action: () => setIsCampaignMapOpen(true) },
+              { icon: isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />, label: isMuted ? 'Unmute Audio' : 'Mute Audio', color: isMuted ? '#f87171' : '#34d399', action: () => { const m = soundFx.toggleMute(); speechEngine.setMuted(m); setIsMuted(m); } },
+              { icon: <Database size={16} />, label: 'NASA Data Sources', color: '#34d399', action: () => setIsNasaModalOpen(true) },
+              { icon: <GraduationCap size={16} />, label: 'Curriculum Guide', color: '#38bdf8', action: () => setIsTeacherModalOpen(true) },
+              { icon: <Bot size={16} />, label: 'AI Disclosure', color: '#fbbf24', action: () => setIsAIModalOpen(true) },
+              { icon: <Users size={16} />, label: 'About Team Mysterio', color: '#c4b5fd', action: () => setIsAboutOpen(true) },
+              { icon: <RotateCcw size={16} />, label: 'Reset Simulation', color: '#94a3b8', action: handleRestart },
+            ].map((item) => (
+              <button
+                key={item.label}
+                onClick={() => { item.action(); soundFx.playClick(700); setIsMobileMenuOpen(false); }}
+                className="mobile-menu-item"
+                style={{ '--item-color': item.color } as React.CSSProperties}
+              >
+                <span className="mobile-menu-icon" style={{ color: item.color }}>{item.icon}</span>
+                <span className="mobile-menu-label">{item.label}</span>
+              </button>
+            ))}
+          </nav>
+        </div>
+      )}
 
       {/* Main HUD */}
       <main className="main-content-layout">
@@ -658,6 +655,10 @@ export const App: React.FC = () => {
                       resources={gameState.resources}
                       activeEventId={gameState.activeEvent?.id}
                       isShieldActive={isShieldActive}
+                      mission={currentMission}
+                      taskChoices={gameState.activeEvent?.options}
+                      onSelectChoice={handleSelectChoice}
+                      activeEventTitle={gameState.activeEvent?.title}
                     />
                   </ErrorBoundary>
                 ) : (
@@ -728,6 +729,10 @@ export const App: React.FC = () => {
                       resources={gameState.resources}
                       activeEventId={gameState.activeEvent?.id}
                       isShieldActive={isShieldActive}
+                      mission={currentMission}
+                      taskChoices={gameState.activeEvent?.options}
+                      onSelectChoice={handleSelectChoice}
+                      activeEventTitle={gameState.activeEvent?.title}
                     />
                   </ErrorBoundary>
                 ) : (

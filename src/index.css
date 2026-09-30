@@ -2239,3 +2239,432 @@ body {
 }
 
 .about-motto-sub { font-size: 0.78rem; color: var(--text-muted); }
+
+/* ══════════════════════════════════════════════════════════════
+   MOBILE RESPONSIVENESS — Jr_AstroCamp
+   Full mobile-first overrides for all screen sizes
+══════════════════════════════════════════════════════════════ */
+
+/* ── HAMBURGER / MOBILE NAV ── */
+.nav-hamburger {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 10px;
+  color: #f1f5f9;
+  cursor: pointer;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+.nav-hamburger:hover { background: rgba(255,255,255,0.12); }
+
+.nav-mobile-right {
+  display: none;
+  align-items: center;
+  gap: 8px;
+}
+
+.nav-desktop-only {
+  display: flex;
+}
+
+.nav-game-label { display: inline; }
+
+.mobile-menu-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  background: rgba(4, 6, 13, 0.7);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+}
+
+.mobile-menu-panel {
+  background: rgba(10, 15, 25, 0.99);
+  border-left: 1px solid rgba(255,255,255,0.1);
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  border-bottom-left-radius: 20px;
+  width: min(340px, 92vw);
+  max-height: calc(100vh - 64px);
+  margin-top: 64px;
+  overflow-y: auto;
+  padding: 16px 0 24px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: -8px 8px 40px rgba(0,0,0,0.7);
+  scrollbar-width: none;
+}
+.mobile-menu-panel::-webkit-scrollbar { display: none; }
+
+.mobile-menu-section { padding: 12px 16px 8px; }
+.mobile-menu-section-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #64748b;
+  margin-bottom: 10px;
+  font-family: var(--font-mono);
+}
+
+.mobile-age-btns {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.mobile-age-btn {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.04);
+  color: #94a3b8;
+  font-size: 0.84rem;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.18s;
+}
+.mobile-age-btn-active {
+  background: rgba(67,255,160,0.12);
+  border-color: rgba(67,255,160,0.35);
+  color: #43ffa0;
+}
+.mobile-age-btn:hover:not(.mobile-age-btn-active) { background: rgba(255,255,255,0.08); color: #f1f5f9; }
+
+.mobile-menu-divider {
+  height: 1px;
+  background: rgba(255,255,255,0.07);
+  margin: 8px 0;
+}
+
+.mobile-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 20px;
+  background: transparent;
+  border: none;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.18s;
+  border-left: 2px solid transparent;
+}
+.mobile-menu-item:hover {
+  background: rgba(255,255,255,0.05);
+  border-left-color: var(--item-color, #38bdf8);
+}
+.mobile-menu-icon { display: flex; align-items: center; flex-shrink: 0; }
+.mobile-menu-label { font-size: 0.88rem; font-weight: 500; color: #e2e8f0; }
+
+/* ── LANDING PAGE MOBILE ── */
+.landing-hero-headline { font-size: clamp(2rem, 8vw, 4.8rem); }
+.landing-hero-tagline  { font-size: clamp(0.9rem, 3vw, 1.1rem); }
+.landing-features-grid { grid-template-columns: 1fr; }
+.landing-steps-grid    { grid-template-columns: 1fr; }
+.landing-formats-grid  { grid-template-columns: 1fr; }
+.landing-team-grid     { grid-template-columns: repeat(2, 1fr); }
+
+/* ── MAIN CONTENT MOBILE ── */
+@media (max-width: 768px) {
+  /* Navbar */
+  .main-nav {
+    padding: 10px 14px;
+    position: sticky;
+    top: 0;
+    z-index: 200;
+  }
+
+  .nav-desktop-only { display: none !important; }
+  .nav-mobile-right  { display: flex !important; }
+  .nav-hamburger     { display: flex !important; }
+  .nav-subtitle-desktop { display: none; }
+
+  .brand-title { font-size: 15px; }
+
+  /* Content layout */
+  .main-content-layout {
+    padding: 12px 12px;
+    gap: 12px;
+  }
+
+  /* Game columns: stack vertically */
+  .game-columns-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px;
+  }
+
+  /* HUD meters: 2 columns on phone */
+  .hud-meters-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+
+  .hud-container { padding: 12px 14px; }
+
+  .hud-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  /* Resource meter cards: smaller */
+  .meter-card { padding: 8px 10px; }
+  .meter-header { font-size: 10px; }
+  .meter-val { font-size: 11px; }
+
+  /* Mission banner: stack horizontally on mobile */
+  .mission-banner-mobile {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 8px !important;
+    padding: 8px 12px !important;
+    font-size: 0.72rem !important;
+  }
+
+  .viewport-toggle-mobile { margin-left: 0 !important; }
+
+  /* Event dilemma card */
+  .event-dilemma-card { padding: 14px; }
+  .event-title { font-size: 16px; }
+
+  /* 3D Simulator: make shorter on phones */
+  .three-sim-container { height: 380px !important; }
+
+  /* ThreeMissionSimulator responsive HUD: wrap better */
+  .three-sim-top-hud {
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 8px 10px !important;
+  }
+  .three-sim-bottom-hud {
+    flex-direction: column !important;
+    gap: 8px !important;
+    padding: 8px 10px !important;
+    align-items: flex-start !important;
+  }
+  .three-sim-keys { display: none; } /* hide on mobile — use touch */
+  .three-sim-abort { width: 100%; text-align: center; }
+
+  /* Mission briefing: engine toggle vertical on mobile */
+  .engine-toggle-row {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 8px !important;
+  }
+  .engine-toggle-btns { flex-direction: column; width: 100%; }
+  .engine-toggle-btns button { width: 100% !important; justify-content: center !important; }
+
+  /* Modal: full screen on phone */
+  .hub-modal-container {
+    margin: 0;
+    border-radius: 0;
+    height: 100vh;
+    max-height: 100vh;
+  }
+
+  .hub-tab-btn { padding: 7px 12px; font-size: 0.76rem; }
+  .hub-tab-content { padding: 16px 14px; }
+
+  .hub-catalog-grid { grid-template-columns: 1fr; }
+  .hub-audio-grid   { grid-template-columns: 1fr; }
+  .hub-briefing-grid { grid-template-columns: 1fr; }
+
+  /* About modal */
+  .about-modal-container { border-radius: 0; max-height: 100vh; }
+  .about-hero-banner { padding: 24px 20px; }
+  .about-body { padding: 20px 18px; }
+  .about-team-grid { grid-template-columns: repeat(2, 1fr); }
+
+  /* Outpost 3D view height */
+  .outpost-3d-container { height: 320px !important; }
+
+  /* Comic panel */
+  .hub-comic-panel { flex-direction: column; gap: 10px; }
+
+  /* Mission game modal: full screen */
+  .mission-game-modal-inner {
+    max-width: 100% !important;
+    border-radius: 12px !important;
+    margin: 8px !important;
+  }
+
+  /* Landing page */
+  .landing-content { padding: 0 16px; }
+  .landing-hero { padding-top: 60px; padding-bottom: 50px; }
+  .landing-hero-headline { font-size: clamp(1.8rem, 9vw, 3.2rem); }
+  .landing-hero-tagline  { font-size: 0.9rem; max-width: 100%; }
+  .landing-hero-tags { flex-wrap: wrap; gap: 6px; }
+  .hero-tag { font-size: 0.72rem; padding: 4px 10px; }
+  .landing-enter-btn { padding: 14px 28px; font-size: 1rem; width: 100%; max-width: 340px; }
+  .landing-features-grid { grid-template-columns: 1fr; gap: 12px; }
+  .landing-steps-grid    { grid-template-columns: 1fr; gap: 12px; }
+  .landing-formats-grid  { grid-template-columns: 1fr; gap: 10px; }
+  .landing-team-grid     { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .landing-section { padding: 40px 0; }
+  .landing-section-title { font-size: clamp(1.4rem, 6vw, 2.2rem); }
+}
+
+/* ── SMALL PHONES ── */
+@media (max-width: 480px) {
+  .main-content-layout { padding: 8px 8px; gap: 10px; }
+  .hud-meters-grid { grid-template-columns: repeat(2, 1fr); gap: 6px; }
+  .meter-card { padding: 6px 8px; }
+  .brand-title { font-size: 13px; }
+
+  .nav-game-label { display: none; }
+
+  .three-sim-container { height: 320px !important; }
+  .outpost-3d-container { height: 260px !important; }
+
+  .landing-hero-headline { font-size: clamp(1.6rem, 10vw, 2.8rem); }
+  .landing-team-grid { grid-template-columns: 1fr; }
+  .about-team-grid   { grid-template-columns: 1fr; }
+  .hub-catalog-grid  { grid-template-columns: 1fr; }
+}
+
+/* ── TABLET / MEDIUM SCREENS ── */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .main-content-layout { padding: 16px 18px; }
+
+  .game-columns-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .hud-meters-grid { grid-template-columns: repeat(4, 1fr); }
+
+  .hub-catalog-grid { grid-template-columns: repeat(2, 1fr); }
+  .hub-audio-grid   { grid-template-columns: repeat(2, 1fr); }
+  .hub-briefing-grid { grid-template-columns: repeat(2, 1fr); }
+
+  .landing-features-grid { grid-template-columns: 1fr; }
+  .landing-steps-grid    { grid-template-columns: repeat(2, 1fr); }
+  .landing-formats-grid  { grid-template-columns: repeat(2, 1fr); }
+  .landing-team-grid     { grid-template-columns: repeat(3, 1fr); }
+}
+
+/* ── TOUCH CONTROLS OVERLAY for 3D simulator ── */
+.three-sim-touch-pad {
+  display: none;
+  position: absolute;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 50;
+  user-select: none;
+  touch-action: none;
+}
+
+@media (max-width: 768px) and (pointer: coarse) {
+  .three-sim-touch-pad { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .three-sim-keys { display: none; }
+}
+
+.touch-dpad {
+  display: grid;
+  grid-template-areas:
+    ". up ."
+    "left mid right"
+    ". down .";
+  grid-template-columns: 48px 48px 48px;
+  grid-template-rows: 48px 48px 48px;
+  gap: 4px;
+}
+
+.touch-dpad button {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(56,189,248,0.35);
+  color: #38bdf8;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.1s;
+  backdrop-filter: blur(8px);
+}
+.touch-dpad button:active { background: rgba(56,189,248,0.2); }
+.touch-dpad-up    { grid-area: up; }
+.touch-dpad-left  { grid-area: left; }
+.touch-dpad-mid   { grid-area: mid; background: rgba(56,189,248,0.12) !important; font-size: 12px !important; color: #94a3b8 !important; }
+.touch-dpad-right { grid-area: right; }
+.touch-dpad-down  { grid-area: down; }
+
+.touch-throttle-bar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  margin-left: 12px;
+}
+
+.touch-throttle-track {
+  width: 44px;
+  height: 120px;
+  background: rgba(15,23,42,0.8);
+  border: 1px solid rgba(56,189,248,0.3);
+  border-radius: 12px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* ── SCROLLBAR GLOBAL STYLE ── */
+* { scrollbar-width: thin; scrollbar-color: rgba(56,189,248,0.2) transparent; }
+*::-webkit-scrollbar { width: 4px; height: 4px; }
+*::-webkit-scrollbar-thumb { background: rgba(56,189,248,0.2); border-radius: 4px; }
+
+/* ── SAFE AREA (iOS notch / home indicator) ── */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .main-nav { padding-top: max(10px, env(safe-area-inset-top)); }
+  .mobile-menu-panel { padding-bottom: max(24px, env(safe-area-inset-bottom)); }
+  body { padding-bottom: env(safe-area-inset-bottom); }
+}
+
+/* ── PREVENT SCROLL LOCK WHEN MOBILE MENU OPEN ── */
+body.mobile-menu-open { overflow: hidden; }
+
+/* ── MISSION GAME MODAL MOBILE ── */
+@media (max-width: 768px) {
+  /* Make the modal take full width with a compact header */
+  .fixed.inset-0.z-50 > div {
+    margin: 4px !important;
+    max-height: calc(100vh - 8px) !important;
+    border-radius: 16px !important;
+  }
+
+  /* 3D sim panel: reduce height */
+  div[class*='h-\\[620px\\]'] { height: 380px !important; }
+
+  /* Engine toggle: stack vertically */
+  div[class*='justify-between'][class*='p-3\\.5'] {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  div[class*='justify-between'][class*='p-3\\.5'] > div:last-child {
+    width: 100%;
+    flex-direction: column;
+  }
+  div[class*='justify-between'][class*='p-3\\.5'] button {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* ── MISSION CAMPAIGN MAP MODAL MOBILE ── */
+@media (max-width: 768px) {
+  .hub-catalog-toolbar { flex-direction: column; align-items: stretch; }
+  .hub-catalog-search-wrap { min-width: 0; }
+}

@@ -1,9 +1,9 @@
 """
 nasa_game/scenes/launch_scene.py
-Jr_AstroCamp Rocket Launch Simulator.
-Vibrant PUBG-quality visuals: parallax sky, glowing exhaust plumes,
-dynamic callouts, animated guidance arrows for kids aged 3–19.
-Controls: W/S or UP/DOWN = Throttle | A/D = Pitch | SPACE = Stage Sep
+NASA High-Fidelity Launch Vehicle Telemetry & Flight Simulator.
+Features realistic multi-layer atmospheric Rayleigh scattering, Mach shock diamonds,
+Cape Canaveral Launch Complex 39A, searchlight flares, and authentic glass cockpit MFD telemetry.
+Controls: W/S or UP/DOWN = Throttle | A/D or LEFT/RIGHT = Pitch Angle | SPACE = Stage Sep
 """
 import math
 import random
@@ -11,13 +11,16 @@ from typing import Callable, List, Tuple
 import pygame
 from nasa_game.catalog import Mission
 from nasa_game.audio import sound_engine
-from nasa_game.graphics import SPRITES, ParticleSystem, ScreenShake
+from nasa_game.graphics import (
+    SPRITES, ParticleSystem, ScreenShake,
+    draw_realistic_sky_gradient, create_realistic_cloud_sprite,
+    draw_cape_canaveral_launch_complex
+)
 from nasa_game.ui import (
     COLOR_BG, COLOR_PANEL, COLOR_CYAN, COLOR_GOLD, COLOR_EMERALD, COLOR_RED,
-    COLOR_ORANGE, COLOR_PURPLE, COLOR_TEXT, COLOR_TEXT_DIM,
-    draw_gauge, draw_arrow_hint, draw_star_field,
+    COLOR_ORANGE, COLOR_TEXT, COLOR_TEXT_DIM, COLOR_PANEL_BORDER,
+    draw_gauge, draw_arrow_hint, draw_star_field, draw_hud_panel, get_font
 )
-
 
 class DroppedStage:
     def __init__(self, x, y, vx, vy, angle, rot_speed, sprite):
@@ -29,7 +32,7 @@ class DroppedStage:
         self.life = 7.0
 
     def update(self, dt):
-        self.vy += 8.0 * dt
+        self.vy += 9.81 * dt * 0.8
         self.x += self.vx * dt
         self.y += self.vy * dt
         self.angle += self.rot_speed * dt
@@ -50,12 +53,12 @@ class LaunchScene:
         self.on_finish = on_finish
         self.t = 0.0
 
-        # ── Rocket Physics ──────────────────────────────────────────────
+        # Rocket Telemetry & Physics
         self.x         = 512.0
-        self.y         = 540.0
+        self.y         = 450.0   # Perfectly centered on Launch Pad at h = 0
         self.altitude_km  = 0.0
         self.velocity_kms = 0.0
-        self.pitch_deg    = 90.0   # 90 = vertical
+        self.pitch_deg    = 90.0   # 90 = vertical launch profile
         self.throttle     = 0.0
         self.fuel         = self.mission.params.get('fuel', 132.0)
         self.max_fuel     = self.fuel
@@ -67,64 +70,91 @@ class LaunchScene:
         self.target_alt = self.mission.params.get('target_alt', 155.0)
         self.target_vel = self.mission.params.get('target_vel', 5.9)
 
-        # ── FX ─────────────────────────────────────────────────────────
+        # FX Systems
         self.particles = ParticleSystem()
         self.shake     = ScreenShake()
         self.dropped_stages: List[DroppedStage] = []
 
-        # ── Background ──────────────────────────────────────────────────
-        self.pad_world_y = 660.0
+        # Environmental layers
+        self.pad_world_y = 570.0  # Above bottom HUD
         self.stars = [
             (random.randint(0, self.W), random.randint(0, self.H),
-             random.random(), random.uniform(0.8, 2.2))
-            for _ in range(140)
-        ]
-        # Clouds (appear at low altitude)
-        self.clouds = [
-            {'x': random.uniform(-50, self.W+50),
-             'y': random.uniform(100, 500),
-             'w': random.randint(80, 200),
-             'h': random.randint(25, 55),
-             'speed': random.uniform(8, 22)}
-            for _ in range(8)
+             random.random(), random.uniform(0.6, 2.0))
+            for _ in range(160)
         ]
 
-        # ── Callout / Tutorial ──────────────────────────────────────────
-        self.callout_text  = "🚀 PRESS W or ↑ to THROTTLE UP!"
-        self.callout_timer = 5.0
+        # Realistic Soft Volumetric Cloud Decks (Troposphere & Low Altitude)
+        self.cloud_decks = [
+            {
+                'x': random.uniform(-100, self.W),
+                'y': random.uniform(100, 320),
+                'speed': random.uniform(8, 20),
+                'surf': create_realistic_cloud_sprite(random.randint(220, 380), random.randint(60, 100), seed=i * 17)
+            }
+            for i in range(4)
+        ]
+
+        # Orbital Earth Dynamics & High-Altitude Planetary Streamers
+        self.downrange_km = 0.0
+        self.earth_drift_x = 0.0
+        self.orbital_scroll = 0.0
+        self.orbital_clouds = [
+            {
+                'x': random.uniform(-100, self.W + 200),
+                'y_ratio': random.uniform(0.55, 0.85),
+                'speed': random.uniform(0.8, 1.8),
+                'alpha': random.randint(80, 160),
+                'surf': create_realistic_cloud_sprite(random.randint(200, 360), random.randint(50, 90), seed=500 + i * 29)
+            }
+            for i in range(6)
+        ]
+
+        # Photorealistic Background Textures (Pad 39A & Earth Orbit Limb)
+        self.bg_pad = None
+        self.bg_orbit = None
+        try:
+            import os
+            pad_path = os.path.join(os.path.dirname(__file__), '..', 'assets', 'pad_bg.jpg')
+            orbit_path = os.path.join(os.path.dirname(__file__), '..', 'assets', 'earth_orbit.jpg')
+            if os.path.exists(pad_path):
+                self.bg_pad = pygame.transform.smoothscale(pygame.image.load(pad_path).convert(), (self.W, self.H))
+            if os.path.exists(orbit_path):
+                self.bg_orbit = pygame.transform.smoothscale(pygame.image.load(orbit_path).convert(), (self.W + 160, self.H + 80))
+        except Exception:
+            pass
+
+        # Flight Director Callout
+        self.callout_text  = "MAIN ENGINE START // INCREASE THROTTLE [W] TO LIFTOFF"
+        self.callout_timer = 4.5
         self.callout_color = COLOR_GOLD
 
-        # Tutorial guide – shown while altitude < 5 km
         self.show_tutorial = True
-        self.tut_timer = 0.0
-
         self.is_over = False
 
-        # ── Fonts ───────────────────────────────────────────────────────
-        self.font_hud   = pygame.font.SysFont("arial", 13, bold=True)
-        self.font_large = pygame.font.SysFont("arial", 20, bold=True)
-        self.font_call  = pygame.font.SysFont("arial", 16, bold=True)
-        self.font_tut   = pygame.font.SysFont("arial", 22, bold=True)
+        # Fonts
+        self.font_hud   = get_font(12, bold=True, mono=True)
+        self.font_large = get_font(16, bold=True, mono=True)
+        self.font_call  = get_font(14, bold=True, mono=True)
 
     def handle_event(self, event: pygame.event.Event):
         if self.is_over:
             return
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_SPACE:
-                if self.has_staging and self.stage == 1 and self.altitude_km > 40:
+                if self.has_staging and self.stage == 1 and self.altitude_km > 35:
                     self.stage = 2
                     s1_surf = SPRITES['saturn_stage1']
                     rad = math.radians(self.pitch_deg - 90)
-                    drop_vx = -math.sin(rad) * 20.0 + random.uniform(-8, 8)
-                    drop_vy = math.cos(rad) * 35.0
+                    drop_vx = -math.sin(rad) * 18.0 + random.uniform(-6, 6)
+                    drop_vy = math.cos(rad) * 30.0
                     self.dropped_stages.append(
                         DroppedStage(self.x, self.y + 40, drop_vx, drop_vy,
-                                     90.0 - self.pitch_deg, random.uniform(-15, 15), s1_surf)
+                                     90.0 - self.pitch_deg, random.uniform(-10, 10), s1_surf)
                     )
-                    self.particles.emit_explosion(self.x, self.y + 20, count=30)
-                    self.shake.trigger(10.0, 0.5)
+                    self.particles.emit_explosion(self.x, self.y + 20, count=25)
+                    self.shake.trigger(8.0, 0.4)
                     sound_engine.play('thruster')
-                    self._callout("💥 STAGE 1 AWAY! S-II ENGINES IGNITE!", COLOR_ORANGE, 3.5)
+                    self._callout("STAGE 1 SEPARATION CONFIRMED · S-II IGNITION", COLOR_ORANGE, 3.5)
 
     def _callout(self, text: str, color=None, duration: float = 3.0):
         self.callout_text  = text
@@ -139,103 +169,120 @@ class LaunchScene:
         self.time_left -= dt
         self.mission_elapsed += dt
         self.callout_timer -= dt
-        self.tut_timer += dt
 
         if self.time_left <= 0:
-            self._end_game(False, "⏰ Time's up! Didn't reach orbit in time.")
+            self._end_game(False, "Flight timeline exceeded — orbital insertion missed.")
             return
 
         keys = pygame.key.get_pressed()
 
-        # Throttle
+        # Throttle command
         if keys[pygame.K_UP] or keys[pygame.K_w]:
-            self.throttle = min(1.0, self.throttle + dt * 2.0)
+            self.throttle = min(1.0, self.throttle + dt * 1.8)
             if self.altitude_km < 1 and self.show_tutorial:
-                self._callout("🔥 ENGINES FIRING! Keep throttle UP!", COLOR_EMERALD, 2.5)
+                self._callout("LIFTOFF CONFIRMED! TOWER CLEARED // CLIMB NOMINAL", COLOR_EMERALD, 2.5)
         elif keys[pygame.K_DOWN] or keys[pygame.K_s]:
-            self.throttle = max(0.0, self.throttle - dt * 2.0)
+            self.throttle = max(0.0, self.throttle - dt * 1.8)
 
-        # Pitch
+        # Pitch command (Gravity Turn)
         if keys[pygame.K_LEFT] or keys[pygame.K_a]:
-            self.pitch_deg = min(90.0, self.pitch_deg + dt * 25.0)
-            self.particles.emit_rcs(self.x + 12, self.y - 15, 45, 0, count=2)
+            self.pitch_deg = min(90.0, self.pitch_deg + dt * 22.0)
+            self.particles.emit_rcs(self.x + 12, self.y - 15, 35, 0, count=2)
         elif keys[pygame.K_RIGHT] or keys[pygame.K_d]:
-            self.pitch_deg = max(5.0, self.pitch_deg - dt * 25.0)
-            self.particles.emit_rcs(self.x - 12, self.y - 15, -45, 0, count=2)
+            self.pitch_deg = max(5.0, self.pitch_deg - dt * 22.0)
+            self.particles.emit_rcs(self.x - 12, self.y - 15, -35, 0, count=2)
 
-        # Engine FX
+        # LOX Venting when idling on pad
+        if self.altitude_km < 0.2 and self.throttle < 0.15:
+            if random.random() < 0.4:
+                self.particles.emit_venting_vapor(self.x - 10, self.y - 20)
+
+        # Sound & Rumble
         if self.throttle > 0.1 and self.fuel > 0:
-            self.shake.trigger(self.throttle * 4.0, 0.1)
+            self.shake.trigger(self.throttle * 3.5, 0.1)
             if math.fmod(self.mission_elapsed, 0.4) < 0.1:
                 sound_engine.play('rocket')
 
-        # Fuel & Thrust
+        # Aerodynamic Drag & Rocket Propulsion Physics
         if self.throttle > 0 and self.fuel > 0:
-            burn_rate = (12.0 if self.stage == 1 else 9.0) * self.throttle
+            burn_rate = (11.0 if self.stage == 1 else 8.5) * self.throttle
             self.fuel = max(0.0, self.fuel - dt * burn_rate)
 
-            thrust_accel = (32.0 if self.stage == 1 else 26.0) * self.throttle
+            thrust_accel = (34.0 if self.stage == 1 else 28.0) * self.throttle
             rad = math.radians(self.pitch_deg)
-            drag = (self.velocity_kms ** 1.8) * math.exp(-self.altitude_km / 40.0) * 0.35
-            gravity_drag = 9.81 * math.sin(rad) * 0.06
-            net_accel = max(-1.5, (thrust_accel * 0.09) - drag - gravity_drag)
+            drag = (self.velocity_kms ** 1.8) * math.exp(-self.altitude_km / 38.0) * 0.32
+            gravity_drag = 9.81 * math.sin(rad) * 0.055
+            net_accel = max(-1.2, (thrust_accel * 0.09) - drag - gravity_drag)
             self.velocity_kms = max(0.0, self.velocity_kms + net_accel * dt)
 
             v_vert = self.velocity_kms * math.sin(rad)
             self.altitude_km += v_vert * dt * 8.0
 
-            # Particles
+            # Tail Flame Particles
             tail_y = self.y + (55 if self.stage == 1 else 30)
             rot_angle = 90.0 - self.pitch_deg
             self.particles.emit_flame(self.x, tail_y, rot_angle,
-                                      speed=300.0 * self.throttle,
+                                      speed=280.0 * self.throttle,
                                       count=int(5 * self.throttle + 2))
-            if self.altitude_km < 50.0:
-                self.particles.emit_smoke(self.x, tail_y + 18, count=2)
+            if self.altitude_km < 40.0:
+                self.particles.emit_smoke(self.x, tail_y + 16, count=2)
         else:
             self.throttle = 0.0
             if self.altitude_km > 0:
-                drag = (self.velocity_kms ** 1.8) * math.exp(-self.altitude_km / 40.0) * 0.25
+                drag = (self.velocity_kms ** 1.8) * math.exp(-self.altitude_km / 38.0) * 0.22
                 self.velocity_kms = max(0.0, self.velocity_kms - drag * dt)
 
-        # Clouds scroll
-        alt_f = min(1.0, self.altitude_km / 120.0)
-        for cl in self.clouds:
+        # Low-altitude Troposphere Clouds Scroll
+        for cl in self.cloud_decks:
             cl['x'] += cl['speed'] * dt
-            if cl['x'] > self.W + 150:
-                cl['x'] = -200
+            if cl['x'] > self.W + 200:
+                cl['x'] = -350
 
-        # Milestone callouts
-        if 15 < self.altitude_km < 35 and "MAX-Q" not in self.callout_text:
-            self._callout("⚡ MAX-Q! Maximum air pressure — hold on!", COLOR_ORANGE, 3.0)
+        # Downrange & Earth Orbital Progression
+        rad = math.radians(self.pitch_deg)
+        v_horiz = self.velocity_kms * math.cos(rad)
+        self.downrange_km += v_horiz * dt * 8.0
+
+        # High-speed Earth Ground Track Drift (Eastward Prograde Trajectory)
+        drift_speed = max(1.5, (v_horiz * 1.6 if self.altitude_km > 50 else self.velocity_kms * 0.4))
+        self.earth_drift_x += drift_speed * dt * 25.0
+        self.orbital_scroll += drift_speed * dt * 32.0
+
+        for oc in self.orbital_clouds:
+            oc['x'] -= drift_speed * dt * 24.0 * oc['speed']
+            if oc['x'] < -380:
+                oc['x'] = self.W + random.uniform(20, 150)
+                oc['y_ratio'] = random.uniform(0.55, 0.85)
+
+        # Milestone Telemetry Callouts
+        if 14 < self.altitude_km < 32 and "MAX-Q" not in self.callout_text:
+            self._callout("TELEMETRY: MAX-Q PASSING · DYNAMIC PRESSURE NOMINAL", COLOR_ORANGE, 3.0)
             sound_engine.play('quindar')
         elif self.altitude_km >= 100 and "KARMAN" not in self.callout_text:
-            self._callout("🌌 YOU PASSED THE KARMAN LINE — YOU'RE IN SPACE! 🎉", COLOR_EMERALD, 4.0)
+            self._callout("TELEMETRY: KARMAN LINE TRANSIT · SPACE ENVIRONMENT NOMINAL", COLOR_EMERALD, 4.0)
             sound_engine.play('quindar')
-        elif self.has_staging and self.stage == 1 and self.altitude_km > 40 and "STAGE" not in self.callout_text:
-            self._callout("🔴 PRESS SPACE to drop Stage 1!", COLOR_CYAN, 4.0)
+        elif self.has_staging and self.stage == 1 and self.altitude_km > 38 and "STAGE" not in self.callout_text:
+            self._callout("AVIONICS: STAGING ADVISORY · PRESS SPACE FOR MECO / SEP", COLOR_CYAN, 4.0)
 
-        # Tutorial auto-hide
-        if self.altitude_km > 8:
+        if self.altitude_km > 6:
             self.show_tutorial = False
 
-        # Update FX
         self.particles.update(dt)
         self.shake.update(dt)
         self.dropped_stages = [s for s in self.dropped_stages if s.update(dt)]
 
-        # Check success
-        if self.altitude_km >= 100.0 and self.velocity_kms >= self.target_vel and self.pitch_deg <= 30.0:
-            self._end_game(True, f"🎉 PERFECT ORBITAL INSERTION! {self.altitude_km:.0f} km at {self.velocity_kms:.1f} km/s")
+        # Orbital Insertion Assessment
+        if self.altitude_km >= 100.0 and self.velocity_kms >= self.target_vel and self.pitch_deg <= 28.0:
+            self._end_game(True, f"ORBITAL INSERTION CONFIRMED: Apogee {self.altitude_km:.0f} km at {self.velocity_kms:.2f} km/s")
             return
         if self.altitude_km >= self.target_alt and self.velocity_kms >= self.target_vel * 0.85:
-            self._end_game(True, f"🚀 MISSION SUCCESS! Orbit: {self.altitude_km:.0f} km")
+            self._end_game(True, f"MISSION PROFILE ACHIEVED: Orbit {self.altitude_km:.0f} km")
             return
         if self.fuel <= 0.0 and self.time_left < self.mission.params.get('time_limit', 120) - 15:
-            if self.velocity_kms >= self.target_vel * 0.85 and self.altitude_km >= 110.0:
-                self._end_game(True, f"✅ ORBIT ON COAST! Apogee {self.altitude_km:.0f} km")
+            if self.velocity_kms >= self.target_vel * 0.85 and self.altitude_km >= 105.0:
+                self._end_game(True, f"BALLISTIC COAST INSERTION: Apogee {self.altitude_km:.0f} km")
             elif self.time_left < 5:
-                self._end_game(False, f"💨 Out of fuel & time. Reached {self.altitude_km:.0f} km at {self.velocity_kms:.2f} km/s")
+                self._end_game(False, f"Depleted propellant reserves. Apogee: {self.altitude_km:.0f} km at {self.velocity_kms:.2f} km/s")
 
     def _end_game(self, success: bool, reason: str):
         self.is_over = True
@@ -251,68 +298,75 @@ class LaunchScene:
             score = int((self.altitude_km / max(1.0, self.target_alt)) * 300)
         self.on_finish(success, score, reason)
 
-    # ── Drawing ─────────────────────────────────────────────────────────────
-
     def draw(self, surface: pygame.Surface):
-        alt_f = min(1.0, self.altitude_km / 120.0)
+        alt_f = min(1.0, self.altitude_km / 110.0)
 
-        # Dynamic sky gradient
-        sky_r = int(12 * (1 - alt_f) + 2 * alt_f)
-        sky_g = int(120 * (1 - alt_f) + 4 * alt_f)
-        sky_b = int(200 * (1 - alt_f) + 10 * alt_f)
-        surface.fill((sky_r, sky_g, sky_b))
+        # 1. Photorealistic Earth Orbit or Atmospheric Gradient
+        if self.bg_orbit and alt_f > 0.35:
+            # Dynamic vertical altitude parallax: Earth horizon recedes as rocket ascends into space
+            earth_y = int(min(65.0, max(0.0, (self.altitude_km - 35.0) * 0.42)))
 
-        # Stars (fade in above 15 km)
-        if alt_f > 0.1:
-            star_alpha_f = min(1.0, (alt_f - 0.1) / 0.4)
-            for sx, sy, sb, spd in self.stars:
-                v = int(sb * 220 * star_alpha_f)
-                v = max(0, min(255, v))
-                pygame.draw.circle(surface, (v, v, min(255, v+30)), (sx, sy), 1 if sb < 0.5 else 2)
+            # Responsive horizontal horizon pan based on gravity turn and orbital drift
+            pitch_drift = (90.0 - self.pitch_deg) * 0.35
+            earth_x = int(-80.0 - (math.sin(self.earth_drift_x * 0.05) * 15.0) - pitch_drift)
 
-        # Clouds (low altitude)
-        if alt_f < 0.5:
+            surface.blit(self.bg_orbit, (earth_x, earth_y))
+
+            # Dynamic high-speed orbital cloud streamers across curved Earth globe
+            if alt_f > 0.4:
+                cloud_opacity = min(1.0, (alt_f - 0.4) / 0.22)
+                for oc in self.orbital_clouds:
+                    cloud_scr_y = int(earth_y + self.H * oc['y_ratio'])
+                    if 0 <= cloud_scr_y <= self.H:
+                        oc['surf'].set_alpha(int(oc['alpha'] * cloud_opacity))
+                        surface.blit(oc['surf'], (int(oc['x']), cloud_scr_y))
+
+            if alt_f < 0.7:
+                overlay = pygame.Surface((self.W, self.H), pygame.SRCALPHA)
+                draw_realistic_sky_gradient(overlay, self.altitude_km, self.W, self.H)
+                overlay.set_alpha(int((0.7 - alt_f) / 0.35 * 255))
+                surface.blit(overlay, (0, 0))
+        else:
+            # Multi-Stop Atmospheric Rayleigh Scattering Gradient
+            draw_realistic_sky_gradient(surface, self.altitude_km, self.W, self.H)
+
+        # 2. Glowing Ozone Layer Limb
+        if 0.2 < alt_f < 0.8:
+            limb_h = int(60 * math.sin(alt_f * math.pi))
+            limb_surf = pygame.Surface((self.W, max(4, limb_h)), pygame.SRCALPHA)
+            pygame.draw.rect(limb_surf, (56, 189, 248, int(90 * alt_f)), (0, 0, self.W, limb_h))
+            surface.blit(limb_surf, (0, self.H - 120 - limb_h))
+
+        # 3. Stellar Field
+        if alt_f > 0.08:
+            star_lum = min(1.0, (alt_f - 0.08) / 0.3)
+            for sx, sy, sb, _ in self.stars:
+                lum = int(sb * 240 * star_lum)
+                if lum > 15:
+                    pygame.draw.circle(surface, (lum, lum, min(255, int(lum * 1.1))), (sx, sy), 1 if sb < 0.8 else 2)
+
+        # 4. Volumetric Clouds — Correct Parallax (Descending Downward as Rocket Ascends)
+        if alt_f < 0.35:
             cloud_alpha = int(255 * max(0.0, 1.0 - alt_f * 3.0))
-            for cl in self.clouds:
-                pad_y = int(self.pad_world_y + self.altitude_km * 35.0)
-                scr_y = int(cl['y'] - (self.altitude_km * 12))
-                if -80 < scr_y < self.H + 40:
-                    cl_surf = pygame.Surface((int(cl['w']), int(cl['h'])), pygame.SRCALPHA)
-                    cl_surf.fill((255, 255, 255, min(cloud_alpha, 180)))
-                    pygame.draw.ellipse(cl_surf, (255,255,255, min(cloud_alpha, 160)),
-                                        cl_surf.get_rect(), 0)
-                    surface.blit(cl_surf, (int(cl['x']), scr_y))
+            for cl in self.cloud_decks:
+                scr_y = int(cl['y'] + (self.altitude_km * 35.0))
+                if -120 < scr_y < self.H + 40:
+                    cl['surf'].set_alpha(cloud_alpha)
+                    surface.blit(cl['surf'], (int(cl['x']), scr_y))
 
-        # Ground, ocean and launchpad
-        pad_screen_y = int(self.pad_world_y + self.altitude_km * 35.0)
-        if pad_screen_y < self.H + 20:
-            # Ocean
-            pygame.draw.rect(surface, (10, 60, 130), (0, pad_screen_y, self.W, self.H))
-            # Ground
-            pygame.draw.rect(surface, (30, 100, 40), (0, pad_screen_y - 8, self.W, 12))
-            # Launchpad platform
-            pygame.draw.rect(surface, (100, 110, 120), (448, pad_screen_y - 22, 128, 26))
-            # Flame trenches
-            pygame.draw.rect(surface, (60, 40, 20), (470, pad_screen_y, 84, 20))
-            # Gantry tower
-            pygame.draw.line(surface, (180, 40, 40),
-                             (442, pad_screen_y), (442, pad_screen_y - 140), 5)
-            pygame.draw.line(surface, (200, 50, 50),
-                             (442, pad_screen_y - 110), (496, pad_screen_y - 110), 2)
-            pygame.draw.line(surface, (200, 50, 50),
-                             (442, pad_screen_y - 80),  (490, pad_screen_y - 80),  2)
+        # 5. Cape Canaveral Launch Pad 39A & Gantry Complex
+        pad_screen_y = int(self.pad_world_y + self.altitude_km * 40.0)
+        draw_cape_canaveral_launch_complex(surface, pad_screen_y, self.W, self.H, self.altitude_km)
 
-        # Screen shake offset
+        # Screen Shake & Dropped Stages
         ox, oy = self.shake.get_offset()
-
-        # Dropped stages
         for st in self.dropped_stages:
             st.draw(surface)
 
-        # Particles
+        # Particles (Rocket Plume, Deluge Steam, LOX Venting)
         self.particles.draw(surface, (0, 0))
 
-        # Rocket sprite
+        # 6. Rocket Sprite (with Roll Attitude & Specular Highlights)
         rot_angle = 90.0 - self.pitch_deg
         if self.stage == 1:
             cw, ch = 48, 220
@@ -326,84 +380,79 @@ class LaunchScene:
         r_rect = rot_rocket.get_rect(center=(int(self.x + ox), int(self.y + oy)))
         surface.blit(rot_rocket, r_rect)
 
-        # ── HUD ──────────────────────────────────────────────────────────
+        # ── COCKPIT GLASS HUD & TELEMETRY MFDs ────────────────────────────────
 
-        # Top header panel
-        hud = pygame.Surface((self.W, 92), pygame.SRCALPHA)
-        hud.fill((4, 12, 40, 215))
-        surface.blit(hud, (0, 0))
-        pygame.draw.line(surface, (40, 80, 160), (0, 92), (self.W, 92), 2)
+        # Top Header Bar (Mission Profile & Flight Director)
+        draw_hud_panel(surface, pygame.Rect(12, 12, self.W - 24, 82), title="FLIGHT DYNAMICS · PRIMARY TELEMETRY")
 
-        # Mission name
-        mission_surf = self.font_large.render(
-            f"🚀 {self.mission.name.upper()} · STAGE {self.stage}", True, COLOR_CYAN)
-        surface.blit(mission_surf, (18, 10))
+        v_name = self.mission.name.upper()
+        if len(v_name) > 26:
+            v_name = v_name[:24] + "..."
+        mission_label = f"VEHICLE: {v_name} // STAGE {self.stage}"
+        surface.blit(self.font_large.render(mission_label, True, COLOR_CYAN), (26, 32))
 
-        # Timer
         mins = int(self.mission_elapsed) // 60
         secs = int(self.mission_elapsed) % 60
         timer_col = COLOR_RED if self.time_left < 20 else COLOR_TEXT
-        timer_surf = self.font_hud.render(
-            f"T+{mins:02d}:{secs:02d}  |  ⏱ {self.time_left:.0f}s LEFT", True, timer_col)
-        surface.blit(timer_surf, (18, 42))
+        timer_txt = f"MET T+{mins:02d}:{secs:02d} | TIMELINE REMAINING: {self.time_left:.1f}s"
+        surface.blit(self.font_hud.render(timer_txt, True, timer_col), (26, 56))
 
-        # Callout banner
-        if self.callout_timer > 0:
-            call_alpha = min(255, int(self.callout_timer * 255 / 3.0))
-            call_surf = self.font_call.render(self.callout_text, True, self.callout_color)
-            surface.blit(call_surf, (18, 65))
-
-        # Right-side telemetry gauges
-        draw_gauge(surface, 640, 12, 360, 20,
+        # Right Telemetry Gauges (Altitude, Velocity, Propellant)
+        draw_gauge(surface, 620, 24, 380, 18,
                    self.altitude_km, self.target_alt,
-                   f"🛸 ALT: {self.altitude_km:.1f} / {self.target_alt:.0f} KM", COLOR_CYAN)
-        draw_gauge(surface, 640, 38, 360, 20,
+                   f"ALTITUDE: {self.altitude_km:.1f} / {self.target_alt:.0f} KM", COLOR_CYAN)
+        draw_gauge(surface, 620, 46, 380, 18,
                    self.velocity_kms, self.target_vel,
-                   f"⚡ VEL: {self.velocity_kms:.2f} / {self.target_vel:.1f} KM/S", COLOR_EMERALD)
-        draw_gauge(surface, 640, 64, 360, 20,
+                   f"ORBITAL VELOCITY: {self.velocity_kms:.2f} / {self.target_vel:.1f} KM/S", COLOR_EMERALD)
+        draw_gauge(surface, 620, 68, 380, 18,
                    self.fuel, self.max_fuel,
-                   f"⛽ FUEL: {int(self.fuel/max(1,self.max_fuel)*100)}%",
+                   f"PROPELLANT: {int((self.fuel / max(1.0, self.max_fuel)) * 100)}%",
                    COLOR_GOLD if self.fuel > 30 else COLOR_RED)
 
-        # Bottom control panel
-        ctrl = pygame.Surface((self.W, 80), pygame.SRCALPHA)
-        ctrl.fill((4, 12, 40, 200))
-        surface.blit(ctrl, (0, self.H - 80))
-        pygame.draw.line(surface, (40, 80, 160), (0, self.H-80), (self.W, self.H-80), 2)
+        # Callout Banner (Center-Left)
+        if self.callout_timer > 0:
+            c_surf = self.font_call.render(f"▶ {self.callout_text}", True, self.callout_color)
+            c_bg = pygame.Surface((c_surf.get_width() + 16, c_surf.get_height() + 8), pygame.SRCALPHA)
+            c_bg.fill((11, 19, 32, 230))
+            pygame.draw.rect(c_bg, self.callout_color, c_bg.get_rect(), 1)
+            surface.blit(c_bg, (26, 102))
+            surface.blit(c_surf, (34, 106))
 
-        # Throttle bar (vertical)
-        th_x, th_y, th_h = 30, self.H - 76, 68
-        pygame.draw.rect(surface, (15, 30, 70), (th_x, th_y, 22, th_h), border_radius=4)
+        # Bottom Control Panel (Attitude, Pitch Ladder, Thrust Command)
+        draw_hud_panel(surface, pygame.Rect(12, self.H - 96, self.W - 24, 84), title="FLIGHT CONTROL & PROPULSION MFD")
+
+        # Throttle Vertical Bar
+        th_x, th_y, th_w, th_h = 28, self.H - 84, 28, 64
+        pygame.draw.rect(surface, (10, 16, 26), (th_x, th_y, th_w, th_h), border_radius=2)
+        pygame.draw.rect(surface, COLOR_PANEL_BORDER, (th_x, th_y, th_w, th_h), 1, border_radius=2)
         fill_h = int(th_h * self.throttle)
         if fill_h > 0:
-            th_col = COLOR_EMERALD if self.throttle > 0.7 else COLOR_GOLD if self.throttle > 0.3 else COLOR_ORANGE
-            pygame.draw.rect(surface, th_col,
-                             (th_x, th_y + th_h - fill_h, 22, fill_h), border_radius=4)
-        thr_label = self.font_hud.render(f"THR\n{int(self.throttle*100)}%", True, COLOR_TEXT)
-        surface.blit(self.font_hud.render(f"{int(self.throttle*100)}%", True, COLOR_TEXT),
-                     (th_x - 2, th_y + th_h + 2))
+            th_col = COLOR_EMERALD if self.throttle > 0.6 else COLOR_GOLD if self.throttle > 0.25 else COLOR_ORANGE
+            pygame.draw.rect(surface, th_col, (th_x + 2, th_y + th_h - fill_h, th_w - 4, fill_h), border_radius=1)
+        surface.blit(self.font_hud.render(f"THRUST", True, COLOR_TEXT_DIM), (th_x + 36, th_y + 4))
+        surface.blit(self.font_large.render(f"{int(self.throttle * 100)}%", True, COLOR_TEXT), (th_x + 36, th_y + 20))
 
-        # Attitude indicator
-        att_x = 80
+        # Flight Attitude & Controls Guidance
+        att_x = 180
         pitch_col = COLOR_EMERALD if self.pitch_deg <= 25 else COLOR_GOLD
+        pitch_txt = f"PITCH ANGLE: {self.pitch_deg:.1f}° // GRAVITY TURN TARGET: < 25°"
+        surface.blit(self.font_large.render(pitch_txt, True, pitch_col), (att_x, self.H - 78))
         surface.blit(self.font_hud.render(
-            f"📐 PITCH: {self.pitch_deg:.1f}°  |  TARGET < 25°", True, pitch_col),
-            (att_x, self.H - 70))
-        surface.blit(self.font_hud.render(
-            "W/S = THROTTLE  |  A/D = PITCH  |  SPACE = STAGE SEPARATION",
-            True, COLOR_TEXT_DIM), (att_x, self.H - 48))
+            "[W / S] THROTTLE REGULATION  |  [A / D] GIMBAL PITCH  |  [SPACE] STAGING",
+            True, COLOR_TEXT_DIM), (att_x, self.H - 52))
+        
+        # Staging Advisory & Orbital Ground Track Status
+        st_txt = "MECO / SEP READY [SPACE]" if (self.has_staging and self.stage == 1 and self.altitude_km > 35) else f"STAGE {self.stage} NOMINAL"
+        st_col = COLOR_CYAN if "READY" in st_txt else COLOR_TEXT_DIM
+        surface.blit(self.font_hud.render(f"STATUS: {st_txt}", True, st_col), (att_x, self.H - 32))
 
-        # Stage status
-        st_col = COLOR_CYAN if (self.has_staging and self.stage == 1) else COLOR_TEXT_DIM
-        st_txt = "🔴 PRESS SPACE → STAGE SEPARATION!" if (self.has_staging and self.stage == 1 and self.altitude_km > 40) else f"STAGE {self.stage} ACTIVE"
-        surface.blit(self.font_hud.render(st_txt, True, st_col), (att_x, self.H - 26))
+        if self.altitude_km > 35:
+            rad = math.radians(self.pitch_deg)
+            v_horiz = self.velocity_kms * math.cos(rad)
+            ground_txt = f"DOWNRANGE: {self.downrange_km:.0f} KM · TRACK: {v_horiz:.2f} KM/S"
+            g_surf = self.font_hud.render(ground_txt, True, COLOR_EMERALD)
+            surface.blit(g_surf, (self.W - 36 - g_surf.get_width(), self.H - 32))
 
-        # Tutorial arrows (shown when throttle is 0 at start)
+        # Target Guidance Chevron
         if self.show_tutorial and self.throttle < 0.2:
-            draw_arrow_hint(surface, 512, 580, "up", self.t, "W or ↑ THROTTLE!", COLOR_GOLD)
-
-        # Mission objective strip (very bottom)
-        obj_surf = self.font_hud.render(
-            f"🎯 GOAL: Reach {self.target_alt:.0f} km at {self.target_vel:.1f} km/s velocity",
-            True, (150, 170, 220))
-        surface.blit(obj_surf, (self.W//2 - obj_surf.get_width()//2, self.H - 18))
+            draw_arrow_hint(surface, 512, 480, "up", self.t, "ENGAGE THROTTLE [W]", COLOR_GOLD)

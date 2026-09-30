@@ -77,7 +77,27 @@ def test_suite():
         scene.draw(surface)
         print(f"  ✓ {g_type} scene updated and rendered cleanly.")
 
-    # 4. Test Storage
+    # 4. Test Campaign, Briefing, and Debrief Scenes
+    from nasa_game.scenes.campaign import CampaignScene
+    from nasa_game.scenes.briefing import BriefingScene
+    from nasa_game.scenes.debrief import DebriefScene
+
+    camp = CampaignScene(missions, lambda m: None)
+    camp.update(0.016)
+    camp.draw(surface)
+    print("  ✓ Campaign scene updated and rendered cleanly.")
+
+    brief = BriefingScene(missions[0], lambda m: None, lambda: None)
+    brief.update(0.016)
+    brief.draw(surface)
+    print("  ✓ Briefing scene updated and rendered cleanly.")
+
+    debrief = DebriefScene(missions[0], True, 1000, "Flight successful", lambda m: None, None, lambda: None)
+    debrief.update(0.016)
+    debrief.draw(surface)
+    print("  ✓ Debrief scene updated and rendered cleanly.")
+
+    # 5. Test Storage
     storage.complete_mission("NASA-M001", 1250)
     assert storage.is_completed("NASA-M001")
     print("✓ Storage and progression persistence verified.")
