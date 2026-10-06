@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import type { TeachingFlashcard } from '../data/teachingFlashcards';
+import { TEACHING_FLASHCARDS, type TeachingFlashcard } from '../data/teachingFlashcards';
+import { MISSION_EVENTS } from '../data/events';
 import type { MissionEvent } from '../types/game';
 import { NASA_MISSIONS } from '../data/nasaMissions';
 import { NASA_MISSIONS_CATALOG, type NasaCatalogMission } from '../data/nasaMissionCatalog';
-import { X, Volume2, VolumeX, Radio, Square, Search, Play } from 'lucide-react';
+import { X, Volume2, VolumeX, Radio, Square, Search, Play, BookOpen, Sparkles } from 'lucide-react';
 import { speechEngine } from '../utils/speechEngine';
 
 interface LearningHubModalProps {
@@ -14,6 +15,7 @@ interface LearningHubModalProps {
   activeMissionId: string;
   onLaunchMission?: (missionId: string) => void;
   completedMissions?: string[];
+  onOpenComicReader?: (issueId?: string) => void;
 }
 
 type HubTab = 'COMIC' | 'AUDIO' | 'NOTEBOOK' | 'BRIEFINGS' | 'CATALOG';
@@ -42,14 +44,17 @@ export const LearningHubModal: React.FC<LearningHubModalProps> = ({
   activeMissionId,
   onLaunchMission,
   completedMissions,
+  onOpenComicReader,
 }) => {
   const [activeTab, setActiveTab] = useState<HubTab>('COMIC');
+  const [selectedComicIdx, setSelectedComicIdx] = useState<number>(0);
   const [speakingCardId, setSpeakingCardId] = useState<string | null>(null);
   const [speakingMissionId, setSpeakingMissionId] = useState<string | null>(null);
   const [speakingCatalogId, setSpeakingCatalogId] = useState<string | null>(null);
   const [catalogSearch, setCatalogSearch] = useState('');
   const [selectedProgram, setSelectedProgram] = useState('ALL');
   const [selectedStatus, setSelectedStatus] = useState('ALL');
+  const [audioViewMode, setAudioViewMode] = useState<'ALL' | 'COLLECTED'>('ALL');
 
   if (!isOpen) return null;
 
@@ -159,17 +164,109 @@ export const LearningHubModal: React.FC<LearningHubModalProps> = ({
         <div className="hub-tab-content">
 
           {/* ── COMIC READER ─────────────────────────────────────────────── */}
-          {activeTab === 'COMIC' && (
-            activeEvent ? (
+          {activeTab === 'COMIC' && (() => {
+            const currentEvent = MISSION_EVENTS[selectedComicIdx] || activeEvent || MISSION_EVENTS[0];
+            return (
               <div>
-                <div style={{ marginBottom:'16px', padding:'12px 16px', background:'rgba(167,139,250,0.08)', borderRadius:'10px', border:'1px solid rgba(167,139,250,0.15)' }}>
-                  <div style={{ fontSize:'0.7rem', fontWeight:700, color:'#a78bfa', textTransform:'uppercase', letterSpacing:'0.1em', marginBottom:'4px' }}>
-                    Sol {activeEvent.sol} — Active Mission Scene
+                {/* Highlight Banner: Full Graphic Novel Series */}
+                <div style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'space-between', 
+                  padding: '14px 18px', 
+                  background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.25), rgba(234, 88, 12, 0.2))', 
+                  borderRadius: '12px', 
+                  border: '1.5px solid rgba(245, 158, 11, 0.5)', 
+                  marginBottom: '16px',
+                  flexWrap: 'wrap',
+                  gap: '12px'
+                }}>
+                  <div>
+                    <div style={{ fontSize: '0.9rem', fontWeight: 900, color: '#fbbf24', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <Sparkles size={18} className="text-amber-400" />
+                      <span>The Chronicles of Jr_AstroCamp · 8 NASA STEM Graphic Novels</span>
+                    </div>
+                    <div style={{ fontSize: '0.75rem', color: '#cbd5e1', marginTop: '4px', maxWidth: '550px', lineHeight: 1.5 }}>
+                      Full multi-panel comic book with vintage graphic layout, character voiceovers, sound effects, curriculum standards, hands-on experiments, and comprehension quizzes!
+                    </div>
                   </div>
-                  <div style={{ fontSize:'1rem', fontWeight:700, color:'#f8fafc' }}>{activeEvent.title}</div>
+                  {onOpenComicReader && (
+                    <button
+                      onClick={() => {
+                        onClose();
+                        onOpenComicReader();
+                      }}
+                      style={{
+                        padding: '10px 18px',
+                        borderRadius: '10px',
+                        background: '#f59e0b',
+                        color: '#020617',
+                        fontWeight: 900,
+                        fontSize: '0.8rem',
+                        border: 'none',
+                        cursor: 'pointer',
+                        boxShadow: '0 4px 16px rgba(245, 158, 11, 0.45)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        transition: 'transform 0.2s',
+                        letterSpacing: '0.03em',
+                        textTransform: 'uppercase'
+                      }}
+                    >
+                      <BookOpen size={16} /> Open Graphic Novel Reader
+                    </button>
+                  )}
                 </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
+                  <div style={{ fontSize: '0.78rem', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <Sparkles size={14} className="text-amber-400" />
+                    <span><strong>Mission Dilemma Comic Strips:</strong> Sol by Sol Mission Log</span>
+                  </div>
+                  <div style={{ fontSize: '0.75rem', color: '#38bdf8', fontFamily: 'monospace' }}>
+                    SOL EVENT {selectedComicIdx + 1} OF {MISSION_EVENTS.length}
+                  </div>
+                </div>
+
+                {/* Episode Selector Pills */}
+                <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '10px', marginBottom: '14px' }}>
+                  {MISSION_EVENTS.map((ev, idx) => (
+                    <button
+                      key={ev.id}
+                      onClick={() => setSelectedComicIdx(idx)}
+                      style={{
+                        padding: '6px 12px',
+                        borderRadius: '8px',
+                        fontSize: '0.75rem',
+                        fontWeight: 600,
+                        whiteSpace: 'nowrap',
+                        background: selectedComicIdx === idx ? 'rgba(56, 189, 248, 0.2)' : 'rgba(15, 23, 42, 0.6)',
+                        border: selectedComicIdx === idx ? '1px solid #38bdf8' : '1px solid rgba(255, 255, 255, 0.1)',
+                        color: selectedComicIdx === idx ? '#38bdf8' : '#94a3b8',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                      }}
+                    >
+                      Sol {ev.sol}: {ev.title.length > 24 ? ev.title.slice(0, 24) + '...' : ev.title}
+                    </button>
+                  ))}
+                </div>
+
+                <div style={{ marginBottom: '16px', padding: '12px 16px', background: 'rgba(167,139,250,0.08)', borderRadius: '10px', border: '1px solid rgba(167,139,250,0.15)' }}>
+                  <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#a78bfa', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '4px' }}>
+                    Sol {currentEvent.sol} — {currentEvent.urgency} Event
+                  </div>
+                  <div style={{ fontSize: '1rem', fontWeight: 700, color: '#f8fafc' }}>{currentEvent.title}</div>
+                  {currentEvent.weatherNotice && (
+                    <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '4px', fontFamily: 'monospace' }}>
+                      Telemetry: {currentEvent.weatherNotice}
+                    </div>
+                  )}
+                </div>
+
                 <div className="hub-comic-strip">
-                  {activeEvent.comicPanels.map((panel, idx) => {
+                  {currentEvent.comicPanels.map((panel, idx) => {
                     const meta = SPEAKER_META[panel.speaker] ?? { emoji: '👤', name: panel.speaker, color: '#94a3b8' };
                     return (
                       <div key={idx} className="hub-comic-panel">
@@ -180,12 +277,36 @@ export const LearningHubModal: React.FC<LearningHubModalProps> = ({
                           {meta.emoji}
                         </div>
                         <div className="hub-comic-dialogue">
-                          <div className="hub-comic-speaker-name" style={{ color: meta.color }}>
-                            {meta.name}
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <div className="hub-comic-speaker-name" style={{ color: meta.color }}>
+                              {meta.name}
+                            </div>
+                            <button
+                              onClick={() => {
+                                if ('speechSynthesis' in window) {
+                                  window.speechSynthesis.cancel();
+                                  const utterance = new SpeechSynthesisUtterance(panel.dialogue);
+                                  utterance.pitch = panel.speaker === 'CADET_MAYA' ? 1.3 : 0.85;
+                                  window.speechSynthesis.speak(utterance);
+                                }
+                              }}
+                              style={{
+                                background: 'transparent',
+                                border: 'none',
+                                color: '#94a3b8',
+                                cursor: 'pointer',
+                                padding: '2px',
+                                display: 'flex',
+                                alignItems: 'center'
+                              }}
+                              title="Listen to dialogue"
+                            >
+                              <Volume2 size={14} className="hover:text-amber-400" />
+                            </button>
                           </div>
-                          <div>{panel.dialogue}</div>
+                          <div>"{panel.dialogue}"</div>
                           {panel.mood && (
-                            <div style={{ marginTop:'6px', fontSize:'0.68rem', color:'#475569', fontStyle:'italic' }}>
+                            <div style={{ marginTop: '6px', fontSize: '0.68rem', color: '#64748b', fontStyle: 'italic' }}>
                               Mood: {panel.mood}
                             </div>
                           )}
@@ -195,25 +316,54 @@ export const LearningHubModal: React.FC<LearningHubModalProps> = ({
                   })}
                 </div>
               </div>
-            ) : (
-              <div className="hub-empty">
-                <span className="hub-empty-icon">📖</span>
-                <p className="hub-empty-msg">
-                  No active mission scene. Play through a Sol event to unlock comic panels here.
-                </p>
-              </div>
-            )
-          )}
+            );
+          })()}
 
           {/* ── AUDIO LESSONS ────────────────────────────────────────────── */}
-          {activeTab === 'AUDIO' && (
-            collectedFlashcards.length > 0 ? (
+          {activeTab === 'AUDIO' && (() => {
+            const displayCards = audioViewMode === 'ALL' ? TEACHING_FLASHCARDS : collectedFlashcards;
+            return (
               <div>
-                <div style={{ marginBottom:'16px', fontSize:'0.8rem', color:'#64748b' }}>
-                  {collectedFlashcards.length} science card{collectedFlashcards.length !== 1 ? 's' : ''} collected — make more decisions to unlock more.
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', flexWrap: 'wrap', gap: '8px' }}>
+                  <div style={{ fontSize: '0.8rem', color: '#94a3b8' }}>
+                    <strong>Team Mysterio Curriculum:</strong> Audio-narrated STEM flashcards powered by text-to-speech.
+                  </div>
+                  <div style={{ display: 'flex', gap: '6px' }}>
+                    <button
+                      onClick={() => setAudioViewMode('ALL')}
+                      style={{
+                        padding: '4px 10px',
+                        borderRadius: '6px',
+                        fontSize: '0.75rem',
+                        fontWeight: 600,
+                        background: audioViewMode === 'ALL' ? 'rgba(56, 189, 248, 0.25)' : 'rgba(30, 41, 59, 0.6)',
+                        border: audioViewMode === 'ALL' ? '1px solid #38bdf8' : '1px solid rgba(255, 255, 255, 0.1)',
+                        color: audioViewMode === 'ALL' ? '#38bdf8' : '#94a3b8',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      All Lessons ({TEACHING_FLASHCARDS.length})
+                    </button>
+                    <button
+                      onClick={() => setAudioViewMode('COLLECTED')}
+                      style={{
+                        padding: '4px 10px',
+                        borderRadius: '6px',
+                        fontSize: '0.75rem',
+                        fontWeight: 600,
+                        background: audioViewMode === 'COLLECTED' ? 'rgba(56, 189, 248, 0.25)' : 'rgba(30, 41, 59, 0.6)',
+                        border: audioViewMode === 'COLLECTED' ? '1px solid #38bdf8' : '1px solid rgba(255, 255, 255, 0.1)',
+                        color: audioViewMode === 'COLLECTED' ? '#38bdf8' : '#94a3b8',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      Unlocked in Play ({collectedFlashcards.length})
+                    </button>
+                  </div>
                 </div>
+
                 <div className="hub-audio-grid">
-                  {collectedFlashcards.map((card) => {
+                  {displayCards.map((card) => {
                     const isPlaying = speakingCardId === card.id;
                     return (
                       <div key={card.id} className="hub-audio-card">
@@ -222,7 +372,7 @@ export const LearningHubModal: React.FC<LearningHubModalProps> = ({
                         <div className="hub-audio-cat">{CATEGORY_LABELS[card.category] ?? card.category}</div>
                         <p className="hub-audio-desc">{card.shortSummary}</p>
                         {card.equationOrFormula && (
-                          <div style={{ fontFamily:'monospace', fontSize:'0.72rem', color:'#43ffa0', marginBottom:'10px', background:'rgba(67,255,160,0.06)', padding:'6px 10px', borderRadius:'6px', border:'1px solid rgba(67,255,160,0.15)' }}>
+                          <div style={{ fontFamily: 'monospace', fontSize: '0.72rem', color: '#43ffa0', marginBottom: '10px', background: 'rgba(67,255,160,0.06)', padding: '6px 10px', borderRadius: '6px', border: '1px solid rgba(67,255,160,0.15)' }}>
                             {card.equationOrFormula}
                           </div>
                         )}
@@ -237,61 +387,48 @@ export const LearningHubModal: React.FC<LearningHubModalProps> = ({
                   })}
                 </div>
               </div>
-            ) : (
-              <div className="hub-empty">
-                <span className="hub-empty-icon">🔊</span>
-                <p className="hub-empty-msg">
-                  No audio lessons yet. Make your first decision in the game — a science card will unlock here.
-                </p>
-              </div>
-            )
-          )}
+            );
+          })()}
 
           {/* ── MY NOTEBOOK ──────────────────────────────────────────────── */}
-          {activeTab === 'NOTEBOOK' && (
-            collectedFlashcards.length > 0 ? (
-              <div style={{ display:'flex', flexDirection:'column', gap:'12px' }}>
-                <div style={{ marginBottom:'4px', fontSize:'0.8rem', color:'#64748b' }}>
-                  Your mission notebook — {collectedFlashcards.length} entries saved.
+          {activeTab === 'NOTEBOOK' && (() => {
+            const displayCards = TEACHING_FLASHCARDS;
+            return (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div style={{ marginBottom: '4px', fontSize: '0.8rem', color: '#94a3b8' }}>
+                  Handwritten-style mission journal entries authored by Team Mysterio with real NASA technical references.
                 </div>
-                {collectedFlashcards.map((card, idx) => (
-                  <div key={card.id} style={{ background:'rgba(15,23,42,0.8)', border:'1px solid rgba(255,255,255,0.07)', borderRadius:'12px', padding:'18px', position:'relative' }}>
-                    <div style={{ position:'absolute', top:'14px', right:'14px', fontFamily:'monospace', fontSize:'0.65rem', color:'#334155' }}>
-                      #{String(idx + 1).padStart(2, '0')}
+                {displayCards.map((card, idx) => (
+                  <div key={card.id} style={{ background: 'rgba(15,23,42,0.8)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '12px', padding: '18px', position: 'relative' }}>
+                    <div style={{ position: 'absolute', top: '14px', right: '14px', fontFamily: 'monospace', fontSize: '0.65rem', color: '#64748b' }}>
+                      ENTRY #{String(idx + 1).padStart(2, '0')}
                     </div>
-                    <div style={{ display:'flex', alignItems:'center', gap:'8px', marginBottom:'8px' }}>
-                      <span style={{ fontSize:'1.2rem' }}>{card.emoji}</span>
-                      <span style={{ fontWeight:700, fontSize:'0.92rem', color:'#f8fafc' }}>{card.title}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                      <span style={{ fontSize: '1.2rem' }}>{card.emoji}</span>
+                      <span style={{ fontWeight: 700, fontSize: '0.92rem', color: '#f8fafc' }}>{card.title}</span>
                     </div>
-                    <div style={{ fontSize:'0.72rem', fontWeight:600, color:'#38bdf8', textTransform:'uppercase', letterSpacing:'0.07em', marginBottom:'8px' }}>
+                    <div style={{ fontSize: '0.72rem', fontWeight: 600, color: '#38bdf8', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '8px' }}>
                       {CATEGORY_LABELS[card.category] ?? card.category}
                     </div>
-                    <p style={{ fontSize:'0.84rem', color:'#94a3b8', lineHeight:1.7, marginBottom:'10px' }}>
+                    <p style={{ fontSize: '0.84rem', color: '#94a3b8', lineHeight: 1.7, marginBottom: '10px' }}>
                       {card.ageAdaptations.CADET.text}
                     </p>
-                    <div style={{ background:'rgba(67,255,160,0.06)', border:'1px solid rgba(67,255,160,0.15)', borderRadius:'8px', padding:'10px 12px', fontSize:'0.78rem', color:'#43ffa0' }}>
+                    <div style={{ background: 'rgba(67,255,160,0.06)', border: '1px solid rgba(67,255,160,0.15)', borderRadius: '8px', padding: '10px 12px', fontSize: '0.78rem', color: '#43ffa0' }}>
                       <strong>Key Takeaway:</strong> {card.ageAdaptations.CADET.keyTakeaway}
                     </div>
                     {card.equationOrFormula && (
-                      <div style={{ fontFamily:'monospace', fontSize:'0.72rem', color:'#a78bfa', marginTop:'8px', background:'rgba(167,139,250,0.06)', padding:'6px 10px', borderRadius:'6px', border:'1px solid rgba(167,139,250,0.15)' }}>
+                      <div style={{ fontFamily: 'monospace', fontSize: '0.72rem', color: '#a78bfa', marginTop: '8px', background: 'rgba(167,139,250,0.06)', padding: '6px 10px', borderRadius: '6px', border: '1px solid rgba(167,139,250,0.15)' }}>
                         {card.equationOrFormula}
                       </div>
                     )}
-                    <div style={{ marginTop:'8px', fontSize:'0.65rem', color:'#334155', fontFamily:'monospace' }}>
+                    <div style={{ marginTop: '8px', fontSize: '0.68rem', color: '#64748b', fontFamily: 'monospace' }}>
                       NASA Ref: {card.nasaDocReference}
                     </div>
                   </div>
                 ))}
               </div>
-            ) : (
-              <div className="hub-empty">
-                <span className="hub-empty-icon">📓</span>
-                <p className="hub-empty-msg">
-                  Your notebook is empty. Science cards you collect during the game will appear here.
-                </p>
-              </div>
-            )
-          )}
+            );
+          })()}
 
           {/* ── MISSION BRIEFINGS ────────────────────────────────────────── */}
           {activeTab === 'BRIEFINGS' && (

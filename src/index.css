@@ -2737,3 +2737,1294 @@ body.mobile-menu-open { overflow: hidden; }
   .hub-catalog-toolbar { flex-direction: column; align-items: stretch; }
   .hub-catalog-search-wrap { min-width: 0; }
 }
+
+/* ═════════════════════════════════════════════════════════════════════════════
+   FLIGHT SIMULATOR & BRIEFING / DEBRIEF MODAL STYLES (NASA GLASSMORPHISM)
+   ═════════════════════════════════════════════════════════════════════════════ */
+.flight-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(3, 7, 18, 0.92);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  overflow-y: auto;
+}
+
+.flight-modal-container {
+  position: relative;
+  width: 100%;
+  max-width: 980px;
+  max-height: 94vh;
+  background: #090e17;
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  border-radius: 20px;
+  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.9), 0 0 50px rgba(56, 189, 248, 0.15);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  color: #e2e8f0;
+}
+
+.flight-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  background: rgba(13, 20, 36, 0.95);
+  border-bottom: 1px solid rgba(56, 189, 248, 0.2);
+  flex-shrink: 0;
+}
+
+.flight-header-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.flight-type-badge-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #38bdf8;
+  flex-shrink: 0;
+}
+
+.flight-header-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: #38bdf8;
+}
+
+.flight-program-pill {
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #cbd5e1;
+  font-size: 10px;
+}
+
+.flight-completed-pill {
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  color: #34d399;
+  font-size: 10px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.flight-mission-title {
+  font-family: var(--font-heading);
+  font-size: 18px;
+  font-weight: 700;
+  color: #ffffff;
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.flight-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.flight-astro-toggle-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: rgba(99, 102, 241, 0.15);
+  border: 1px solid rgba(99, 102, 241, 0.35);
+  border-radius: 8px;
+  color: #a5b4fc;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.flight-astro-toggle-btn:hover {
+  background: rgba(99, 102, 241, 0.28);
+  color: #ffffff;
+}
+
+.flight-close-btn {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  padding: 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+.flight-close-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+/* ── STAGE CONTENT ── */
+.flight-stage-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  overflow-y: auto;
+  position: relative;
+  min-height: 480px;
+}
+
+/* ── BRIEFING CARD STYLES ── */
+.flight-briefing-wrap {
+  width: 100%;
+  max-width: 820px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.flight-directive-panel {
+  background: rgba(13, 20, 36, 0.85);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  border-radius: 14px;
+  padding: 20px;
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.5);
+}
+
+.flight-directive-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: #38bdf8;
+  letter-spacing: 0.08em;
+  margin-bottom: 10px;
+}
+
+.flight-directive-text {
+  font-size: 14px;
+  line-height: 1.6;
+  color: #cbd5e1;
+  margin-bottom: 14px;
+}
+
+.flight-objective-box {
+  background: rgba(6, 182, 212, 0.1);
+  border: 1px solid rgba(6, 182, 212, 0.3);
+  border-radius: 10px;
+  padding: 12px 16px;
+  font-size: 13px;
+  color: #e0f2fe;
+}
+.flight-objective-box strong {
+  color: #38bdf8;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  display: block;
+  margin-bottom: 3px;
+}
+
+/* ── STEM CURRICULUM BOX (What will be taught) ── */
+.flight-stem-box {
+  background: rgba(88, 28, 135, 0.2);
+  border: 1px solid rgba(167, 139, 250, 0.35);
+  border-radius: 14px;
+  padding: 18px 20px;
+}
+.flight-stem-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  color: #c084fc;
+  letter-spacing: 0.06em;
+  margin-bottom: 8px;
+}
+.flight-stem-desc {
+  font-size: 13px;
+  color: #e2e8f0;
+  line-height: 1.6;
+  margin-bottom: 10px;
+}
+.flight-stem-equation {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: #4ade80;
+  background: rgba(74, 222, 128, 0.08);
+  border: 1px solid rgba(74, 222, 128, 0.2);
+  padding: 8px 12px;
+  border-radius: 8px;
+}
+
+.flight-grid-two {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+@media (max-width: 640px) {
+  .flight-grid-two { grid-template-columns: 1fr; }
+}
+
+.flight-info-card {
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 16px;
+}
+.flight-card-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  color: #94a3b8;
+  letter-spacing: 0.06em;
+  margin-bottom: 10px;
+}
+.flight-controls-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 2;
+  color: #cbd5e1;
+}
+.flight-controls-list span {
+  color: #38bdf8;
+  font-weight: 700;
+}
+.flight-fact-text {
+  font-size: 12.5px;
+  color: #fde68a;
+  line-height: 1.6;
+  font-style: italic;
+}
+
+.flight-engine-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(13, 20, 36, 0.9);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  border-radius: 12px;
+  padding: 12px 18px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.flight-engine-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  color: #38bdf8;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.flight-engine-btn-group {
+  display: flex;
+  gap: 8px;
+}
+.flight-engine-btn {
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s;
+}
+.flight-engine-btn-active {
+  background: linear-gradient(135deg, #00f0ff 0%, #0284c7 100%);
+  color: #020617;
+  box-shadow: 0 0 15px rgba(0, 240, 255, 0.35);
+}
+.flight-engine-btn-inactive {
+  background: rgba(30, 41, 59, 0.7);
+  color: #94a3b8;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.flight-engine-btn-inactive:hover {
+  color: #ffffff;
+}
+
+.flight-launch-action {
+  display: flex;
+  justify-content: center;
+  padding-top: 8px;
+}
+.flight-launch-btn {
+  padding: 15px 42px;
+  background: linear-gradient(135deg, #00f0ff 0%, #10b981 100%);
+  color: #020617;
+  font-family: var(--font-heading);
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  border: none;
+  border-radius: 12px;
+  box-shadow: 0 0 30px rgba(0, 240, 255, 0.4);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  transition: all 0.2s;
+}
+.flight-launch-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 45px rgba(0, 240, 255, 0.6);
+}
+
+/* ── DEBRIEF CARDS (SUCCESS & ABORT) ── */
+.flight-debrief-card {
+  width: 100%;
+  max-width: 540px;
+  background: rgba(13, 20, 36, 0.95);
+  border-radius: 20px;
+  padding: 28px;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.flight-debrief-success {
+  border: 1px solid rgba(16, 185, 129, 0.5);
+  box-shadow: 0 0 40px rgba(16, 185, 129, 0.15);
+}
+.flight-debrief-failure {
+  border: 1px solid rgba(239, 68, 68, 0.5);
+  box-shadow: 0 0 40px rgba(239, 68, 68, 0.15);
+}
+
+.flight-debrief-icon-circle {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.icon-circle-success {
+  background: rgba(16, 185, 129, 0.15);
+  border: 2px solid rgba(16, 185, 129, 0.5);
+  color: #34d399;
+}
+.icon-circle-failure {
+  background: rgba(239, 68, 68, 0.15);
+  border: 2px solid rgba(239, 68, 68, 0.5);
+  color: #f87171;
+}
+
+.flight-debrief-title {
+  font-family: var(--font-heading);
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: #ffffff;
+}
+.flight-debrief-sub {
+  font-size: 13px;
+  color: #94a3b8;
+  margin-top: 4px;
+}
+
+.flight-debrief-score-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 16px;
+}
+.flight-score-val {
+  font-family: var(--font-mono);
+  font-size: 26px;
+  font-weight: 800;
+  color: #fbbf24;
+}
+.flight-rank-val {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 700;
+  color: #34d399;
+}
+
+.flight-incident-box {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 12px;
+  padding: 14px 16px;
+  text-align: left;
+}
+.flight-incident-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  color: #f87171;
+  letter-spacing: 0.06em;
+  margin-bottom: 6px;
+}
+.flight-incident-desc {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: #fca5a5;
+  line-height: 1.5;
+}
+
+.flight-debrief-btns {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.flight-replay-btn {
+  padding: 12px 24px;
+  border-radius: 10px;
+  background: rgba(30, 41, 59, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #cbd5e1;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.flight-next-btn {
+  padding: 12px 28px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%);
+  border: none;
+  color: #020617;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.35);
+}
+.flight-retry-red-btn {
+  padding: 12px 28px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  border: none;
+  color: #ffffff;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 0 20px rgba(239, 68, 68, 0.35);
+}
+
+.flight-footer-bar {
+  padding: 12px 24px;
+  background: rgba(13, 20, 36, 0.8);
+  border-top: 1px solid rgba(56, 189, 248, 0.15);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: #64748b;
+  flex-shrink: 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   COCKPIT HUD — In-Flight Glassmorphic Aerospace Overlay
+   ═══════════════════════════════════════════════════════════════ */
+
+@keyframes cockpitDotPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.5; transform: scale(1.6); }
+}
+
+.cockpit-viewport {
+  position: relative;
+  width: 100%;
+  height: 460px;
+  background: #020617;
+  border-radius: 18px;
+  overflow: hidden;
+  border: 1px solid rgba(6, 182, 212, 0.35);
+  box-shadow:
+    0 30px 80px rgba(0, 0, 0, 0.85),
+    0 0 40px rgba(6, 182, 212, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  display: flex;
+  flex-direction: column;
+  user-select: none;
+}
+@media (min-width: 640px) { .cockpit-viewport { height: 540px; } }
+@media (min-width: 768px) { .cockpit-viewport { height: 620px; } }
+
+.cockpit-canvas-mount {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  inset: 0;
+  cursor: crosshair;
+}
+
+/* ── Top Bar ── */
+.cockpit-top-bar {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  right: 10px;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 16px;
+  background: rgba(3, 7, 18, 0.82);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  border: 1px solid rgba(6, 182, 212, 0.25);
+  border-radius: 14px;
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.cockpit-mission-id {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.cockpit-rocket-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, rgba(6, 182, 212, 0.2) 0%, rgba(16, 185, 129, 0.15) 100%);
+  border: 1px solid rgba(6, 182, 212, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #22d3ee;
+  flex-shrink: 0;
+  animation: cockpitDotPulse 3s ease-in-out infinite;
+}
+
+.cockpit-mission-text { min-width: 0; }
+
+.cockpit-mission-name {
+  font-family: var(--font-heading);
+  font-size: 13px;
+  font-weight: 700;
+  color: #f1f5f9;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cockpit-3d-pill {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 800;
+  padding: 1px 7px;
+  border-radius: 6px;
+  background: rgba(6, 182, 212, 0.15);
+  border: 1px solid rgba(6, 182, 212, 0.5);
+  color: #22d3ee;
+  letter-spacing: 0.06em;
+  flex-shrink: 0;
+}
+
+.cockpit-mission-meta {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: #64748b;
+  margin-top: 1px;
+}
+
+/* ── Telemetry Grid ── */
+.cockpit-telemetry-grid {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.cockpit-gauge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 4px 10px;
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  min-width: 68px;
+}
+
+.cockpit-gauge-label {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: #475569;
+  text-transform: uppercase;
+}
+
+.cockpit-gauge-value {
+  font-family: var(--font-mono);
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+.cockpit-gauge-value small {
+  font-size: 10px;
+  font-weight: 400;
+  opacity: 0.6;
+}
+
+.cockpit-val-cyan    { color: #22d3ee; }
+.cockpit-val-emerald { color: #34d399; }
+.cockpit-val-amber   { color: #fbbf24; }
+.cockpit-val-white   { color: #f1f5f9; }
+.cockpit-val-critical {
+  color: #f87171;
+  animation: cockpitDotPulse 0.8s ease-in-out infinite;
+}
+
+/* ── Camera + Audio ── */
+.cockpit-controls-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.cockpit-camera-selector {
+  display: flex;
+  background: rgba(2, 6, 23, 0.8);
+  padding: 3px;
+  border-radius: 10px;
+  border: 1px solid rgba(100, 116, 139, 0.3);
+}
+
+.cockpit-cam-btn {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 4px 10px;
+  border-radius: 7px;
+  border: none;
+  background: transparent;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.cockpit-cam-btn:hover { color: #e2e8f0; }
+.cockpit-cam-active {
+  background: linear-gradient(135deg, #06b6d4, #0284c7);
+  color: #020617;
+  box-shadow: 0 0 12px rgba(6, 182, 212, 0.5);
+}
+
+.cockpit-audio-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: rgba(30, 41, 59, 0.6);
+  border: 1px solid rgba(100, 116, 139, 0.3);
+  color: #94a3b8;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+.cockpit-audio-btn:hover {
+  background: rgba(51, 65, 85, 0.7);
+  color: #e2e8f0;
+}
+
+/* ── Flight Advisory ── */
+.cockpit-advisory {
+  position: absolute;
+  top: 70px;
+  left: 10px;
+  z-index: 20;
+  max-width: 420px;
+  padding: 8px 14px;
+  background: rgba(3, 7, 18, 0.82);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid rgba(6, 182, 212, 0.2);
+  border-radius: 10px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+
+.cockpit-advisory-label {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: #22d3ee;
+  display: block;
+  margin-bottom: 3px;
+}
+
+.cockpit-advisory-text {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: #e2e8f0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cockpit-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  animation: cockpitDotPulse 1.5s ease-in-out infinite;
+  box-shadow: 0 0 8px currentColor;
+}
+
+/* ── Mobile Touch Controls ── */
+.cockpit-touch-overlay {
+  position: absolute;
+  bottom: 80px;
+  left: 12px;
+  right: 12px;
+  z-index: 30;
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  pointer-events: none;
+}
+@media (max-width: 639px) {
+  .cockpit-touch-overlay { display: flex; }
+}
+
+.cockpit-touch-group {
+  display: flex;
+  gap: 8px;
+  pointer-events: auto;
+}
+
+.cockpit-touch-btn {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: rgba(3, 7, 18, 0.85);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(6, 182, 212, 0.4);
+  color: #22d3ee;
+  font-weight: 700;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
+  transition: all 0.1s;
+}
+.cockpit-touch-btn:active {
+  background: rgba(6, 182, 212, 0.3);
+  transform: scale(0.94);
+}
+
+.cockpit-touch-stage {
+  width: auto;
+  padding: 0 12px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 800;
+  background: rgba(245, 158, 11, 0.2);
+  border-color: rgba(245, 158, 11, 0.5);
+  color: #fcd34d;
+}
+.cockpit-touch-stage:active { background: rgba(245, 158, 11, 0.4); }
+
+.cockpit-touch-up {
+  background: rgba(16, 185, 129, 0.2);
+  border-color: rgba(16, 185, 129, 0.5);
+  color: #34d399;
+}
+.cockpit-touch-up:active { background: rgba(16, 185, 129, 0.35); }
+
+/* ── Bottom Bar ── */
+.cockpit-bottom-bar {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  right: 10px;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 10px 16px;
+  background: rgba(3, 7, 18, 0.82);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  border: 1px solid rgba(6, 182, 212, 0.25);
+  border-radius: 14px;
+  box-shadow:
+    0 -6px 28px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.cockpit-thrust-section {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cockpit-thrust-track {
+  width: 120px;
+  height: 22px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #0f172a;
+  border: 1px solid rgba(100, 116, 139, 0.3);
+  position: relative;
+}
+
+.cockpit-thrust-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #06b6d4 0%, #10b981 100%);
+  transition: width 75ms linear;
+  box-shadow: 0 0 10px rgba(6, 182, 212, 0.4);
+}
+
+.cockpit-thrust-label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 800;
+  color: #f1f5f9;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+}
+
+.cockpit-pitch-readout {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: #64748b;
+}
+.cockpit-pitch-readout strong {
+  color: #22d3ee;
+}
+
+/* ── Key Hints ── */
+.cockpit-key-hints {
+  display: none;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: #94a3b8;
+}
+@media (min-width: 768px) {
+  .cockpit-key-hints { display: flex; }
+}
+
+.cockpit-key-hints kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  padding: 2px 7px;
+  border-radius: 5px;
+  background: rgba(30, 41, 59, 0.8);
+  border: 1px solid rgba(100, 116, 139, 0.4);
+  color: #22d3ee;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 800;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+}
+
+.cockpit-key-amber {
+  color: #fbbf24 !important;
+  border-color: rgba(245, 158, 11, 0.4) !important;
+}
+
+/* ── Abort Button ── */
+.cockpit-abort-btn {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  padding: 7px 16px;
+  border-radius: 8px;
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  color: #fca5a5;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.comic-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: rgba(2, 6, 18, 0.94);
+  backdrop-filter: blur(16px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  overflow-y: auto;
+}
+
+.comic-modal-window {
+  width: 100%;
+  max-width: 1180px;
+  max-height: 94vh;
+  background: #090e1a;
+  border: 2px solid rgba(245, 158, 11, 0.6);
+  border-radius: 20px;
+  box-shadow: 0 0 60px rgba(245, 158, 11, 0.25), 0 25px 60px rgba(0, 0, 0, 0.9);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  margin: auto;
+  position: relative;
+}
+
+.comic-top-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  background: linear-gradient(90deg, #d97706, #f59e0b, #d97706);
+  color: #020617;
+  font-weight: 900;
+  border-bottom: 2px solid #000;
+  flex-shrink: 0;
+}
+
+.comic-shelf-container {
+  padding: 24px 28px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.comic-shelf-header {
+  text-align: center;
+  max-width: 680px;
+  margin: 0 auto 28px auto;
+}
+
+.comic-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 22px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.comic-card {
+  background: #090e1a;
+  border: 3px solid #1e293b;
+  border-radius: 16px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+  box-shadow: 4px 6px 0px rgba(0, 0, 0, 0.8), 0 10px 25px rgba(0, 0, 0, 0.5);
+}
+
+.comic-card:hover {
+  transform: translateY(-6px) scale(1.01);
+  border-color: #f59e0b;
+  box-shadow: 6px 12px 0px rgba(245, 158, 11, 0.5), 0 20px 35px rgba(245, 158, 11, 0.3);
+}
+
+.comic-card-cover-wrapper {
+  position: relative;
+  width: 100%;
+  height: 310px;
+  overflow: hidden;
+  background: #020617;
+}
+
+.comic-cover-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.4s ease;
+}
+
+.comic-card:hover .comic-cover-img {
+  transform: scale(1.05);
+}
+
+.comic-card-cover {
+  padding: 16px;
+  padding-bottom: 24px;
+  position: relative;
+  overflow: hidden;
+}
+
+.comic-card-body {
+  padding: 16px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  background: #090e1a;
+  border-top: 2px solid #1e293b;
+}
+
+.comic-reader-nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 18px;
+  background: rgba(15, 23, 42, 0.98);
+  border-bottom: 2px solid #1e293b;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.comic-page-view {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 24px;
+}
+
+.comic-panels-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+}
+
+@media (max-width: 900px) {
+  .comic-panels-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.comic-panel-card {
+  position: relative;
+  background: #070d19;
+  border: 3px solid #1e293b;
+  border-radius: 14px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.9), 0 8px 24px rgba(0, 0, 0, 0.7);
+  transition: all 0.2s ease;
+}
+
+.comic-panel-card.active-panel {
+  border-color: #f59e0b;
+  box-shadow: 4px 4px 0px rgba(245, 158, 11, 0.8), 0 0 25px rgba(245, 158, 11, 0.4);
+}
+
+.comic-panel-full {
+  grid-column: 1 / -1;
+}
+
+.comic-panel-meta-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 4px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.comic-panel-number-pill {
+  font-family: 'Impact', 'Arial Black', sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  background: #fbbf24;
+  color: #020617;
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid #000;
+  box-shadow: 1px 1px 0 #000;
+}
+
+.comic-panel-scene-pill {
+  font-family: monospace;
+  font-size: 10px;
+  font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.comic-panel-art-frame {
+  position: relative;
+  width: 100%;
+  height: 210px;
+  background: #020617;
+  border: 2px solid #334155;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.8);
+}
+
+.comic-visual-viewport {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+}
+
+.comic-svg-stage {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.comic-visual-badge {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  background: rgba(2, 6, 23, 0.85);
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  color: #38bdf8;
+  font-family: monospace;
+  font-size: 9.5px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 4px;
+  backdrop-filter: blur(4px);
+  pointer-events: none;
+  letter-spacing: 0.04em;
+}
+
+.comic-sfx-burst {
+  position: absolute;
+  z-index: 15;
+  background: #facc15;
+  border: 2px solid #000;
+  padding: 3px 10px;
+  border-radius: 6px;
+  box-shadow: 3px 3px 0px #000;
+  font-family: 'Impact', 'Arial Black', sans-serif;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 1.15rem;
+  pointer-events: none;
+  animation: pulse 2s infinite ease-in-out;
+}
+
+.comic-sfx-text {
+  text-shadow: 1px 1px 0 #000;
+}
+
+.blueprint-mode {
+  background: #031525;
+}
+
+.blueprint-grid-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: linear-gradient(rgba(56, 189, 248, 0.1) 1px, transparent 1px),
+                    linear-gradient(90deg, rgba(56, 189, 248, 0.1) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+.comic-scene-bg {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.comic-caption-box {
+  position: relative;
+  z-index: 10;
+  padding: 8px 12px;
+  background: #fbbf24;
+  color: #020617;
+  font-weight: 800;
+  font-size: 0.78rem;
+  border-radius: 6px;
+  border: 2px solid #000;
+  box-shadow: 2px 2px 0 #000;
+  line-height: 1.45;
+}
+
+.comic-bubble {
+  position: relative;
+  z-index: 10;
+  background: #0b1329;
+  border: 2px solid #334155;
+  border-radius: 12px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-shadow: 3px 3px 0px rgba(0, 0, 0, 0.6);
+}
+
+.comic-curriculum-panel {
+  padding: 24px;
+  max-width: 860px;
+  margin: 0 auto;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+

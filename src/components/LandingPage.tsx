@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 
 interface LandingPageProps {
   onEnter: () => void;
+  onOpenComics?: () => void;
 }
 
 // ── Starfield Canvas ──────────────────────────────────────────────────────────
@@ -105,7 +106,7 @@ const TEAM = [
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
-export const LandingPage: React.FC<LandingPageProps> = ({ onEnter }) => {
+export const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onOpenComics }) => {
   const [warping, setWarping] = useState(false);
 
   const handleEnter = () => {
@@ -149,13 +150,29 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnter }) => {
             <span className="hero-tag hero-tag-amber">🏆 Space Apps 2026</span>
           </div>
 
-          <button
-            className="landing-enter-btn"
-            onClick={handleEnter}
-            id="landing-enter-mission-control"
-          >
-            🚀&nbsp; Enter Mission Control
-          </button>
+          <div className="flex flex-wrap items-center justify-center gap-3 mt-4">
+            <button
+              className="landing-enter-btn"
+              onClick={handleEnter}
+              id="landing-enter-mission-control"
+            >
+              🚀&nbsp; Enter Mission Control
+            </button>
+            {onOpenComics && (
+              <button
+                className="landing-enter-btn"
+                style={{
+                  background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.95), rgba(217, 119, 6, 0.95))',
+                  boxShadow: '0 0 25px rgba(245, 158, 11, 0.45)',
+                  border: '1px solid rgba(254, 240, 138, 0.5)'
+                }}
+                onClick={onOpenComics}
+                id="landing-read-comics"
+              >
+                📖&nbsp; Read Comic Books (8 Issues)
+              </button>
+            )}
+          </div>
 
           <p className="landing-scroll-hint">↓ Scroll to explore the platform</p>
         </section>
@@ -223,13 +240,33 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnter }) => {
             Every student has a different learning style. Astro Camp meets all of them.
           </p>
           <div className="landing-formats-grid">
-            {FORMATS.map((f) => (
-              <div key={f.name} className="learning-format-card">
-                <span className="format-icon">{f.icon}</span>
-                <div className="format-name">{f.name}</div>
-                <p className="format-label">{f.label}</p>
-              </div>
-            ))}
+            {FORMATS.map((f) => {
+              const isComic = f.name === 'Comic Book';
+              return (
+                <div 
+                  key={f.name} 
+                  className="learning-format-card"
+                  onClick={() => {
+                    if (isComic && onOpenComics) {
+                      onOpenComics();
+                    } else {
+                      handleEnter();
+                    }
+                  }}
+                  style={{ cursor: 'pointer' }}
+                  title={isComic ? "Read NASA STEM Comic Books" : "Explore this learning mode in Mission Control"}
+                >
+                  <span className="format-icon">{f.icon}</span>
+                  <div className="format-name">{f.name}</div>
+                  <p className="format-label">{f.label}</p>
+                  {isComic && (
+                    <div style={{ marginTop: '8px', fontSize: '0.72rem', color: '#f59e0b', fontWeight: 700 }}>
+                      👉 Click to Read Graphic Novels
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </section>
 

@@ -15,8 +15,9 @@ from nasa_game.graphics import ParticleSystem
 from nasa_game.ui import (
     Button, COLOR_BG, COLOR_PANEL, COLOR_PANEL_BORDER, COLOR_CYAN, COLOR_GOLD,
     COLOR_EMERALD, COLOR_RED, COLOR_ORANGE, COLOR_PURPLE, COLOR_TEXT, COLOR_TEXT_DIM,
-    draw_star_field, draw_hud_panel, get_font
+    draw_star_field, draw_hud_panel, get_font, draw_wrapped_text
 )
+from nasa_game.scenes.briefing import STEM_CURRICULUM
 
 def get_performance_grade(score: int) -> str:
     if score >= 900: return "DISTINGUISHED FLIGHT COMMANDER // GRADE S"
@@ -64,6 +65,7 @@ class DebriefScene:
         self.font_med    = get_font(14, bold=True, mono=True)
         self.font_body   = get_font(12, bold=False, mono=True)
         self.font_score  = get_font(32, bold=True, mono=True)
+        self.font_stem   = get_font(11, bold=True, mono=True)
 
         btn_y = 620
         self.btn_replay = Button(
@@ -126,7 +128,7 @@ class DebriefScene:
 
         # ── Main Debrief Box ──────────────────────────────────────────────────
         main_top = 104
-        main_h   = 496
+        main_h   = 340  # shortened to make room for STEM review box
         draw_hud_panel(surface, pygame.Rect(24, main_top, self.W - 48, main_h), title="TELEMETRY PERFORMANCE & ROOT CAUSE EVALUATION")
 
         # Telemetry Score Certificate
@@ -143,26 +145,58 @@ class DebriefScene:
 
         surface.blit(self.font_med.render("FLIGHT DIRECTOR NARRATIVE:", True, COLOR_CYAN), (506, main_top + 42))
         clean_reason = self.reason.replace("🎉", "").replace("🚀", "").replace("✅", "").replace("💥", "").strip()
-        from nasa_game.ui import draw_wrapped_text
         draw_wrapped_text(surface, clean_reason, 506, main_top + 68, 450, self.font_body, COLOR_TEXT, 5)
 
         # Historical Mission Debrief & Scientific Learnings
         dy = main_top + 160
         surface.blit(self.font_large.render("NASA HISTORICAL FLIGHT ARCHIVE & TAKEAWAYS:", True, COLOR_CYAN), (48, dy))
-        dy += 28
+        dy += 26
 
         proto = self.mission.protocol.replace("Manual Protocol:", "").strip()
+        if len(proto) > 340:
+            proto = proto[:337] + "..."
         draw_wrapped_text(surface, f"Historical Protocol: {proto}", 48, dy, 920, self.font_body, (203, 213, 225), 6)
 
         # Campaign Progress Record
         completed_count = storage.total_completed()
         best_score = storage.scores.get(self.mission.id, self.score)
-        dy += 180
+        dy = main_top + main_h - 44
         pygame.draw.line(surface, COLOR_PANEL_BORDER, (48, dy), (976, dy), 1)
-        dy += 16
+        dy += 12
 
         prog_txt = f"TOTAL MISSIONS CERTIFIED: {completed_count}/76 ({storage.get_progress_pct(76)}%)  |  PERSONAL BEST ON THIS FLIGHT: {best_score} PTS"
         surface.blit(self.font_med.render(prog_txt, True, COLOR_EMERALD), (48, dy))
+
+        # ── STEM REVIEW BOX — What You Just Learned ───────────────────────────
+        stem_top = main_top + main_h + 10
+        stem_h   = 118
+        pygame.draw.rect(surface, (10, 20, 40), (24, stem_top, self.W - 48, stem_h), border_radius=4)
+        pygame.draw.rect(surface, (52, 211, 153), (24, stem_top, self.W - 48, stem_h), 1, border_radius=4)
+        pygame.draw.rect(surface, (52, 211, 153), (24, stem_top, 4, stem_h), border_radius=2)
+
+        stem = STEM_CURRICULUM.get(self.mission.game_type, (
+            "AEROSPACE STEM: Engineering & Mission Planning",
+            "You experienced real NASA systems engineering — checklists, failure modes, and crew safety.",
+            "NASA SP-6105: Systems Engineering Handbook"
+        ))
+
+        sx, sy = 36, stem_top + 10
+
+        surface.blit(self.font_stem.render("✅  WHAT YOU JUST LEARNED:", True, (52, 211, 153)), (sx, sy)); sy += 20
+        surface.blit(self.font_med.render(stem[0], True, (255, 255, 255)), (sx, sy)); sy += 22
+
+        desc = stem[1]
+        if len(desc) > 130:
+            desc = desc[:127] + "..."
+        surface.blit(self.font_body.render(desc, True, (203, 213, 225)), (sx, sy)); sy += 20
+
+        surface.blit(self.font_stem.render(f"KEY FORMULA: {stem[2]}", True, (250, 204, 21)), (sx, sy)); sy += 18
+
+        if self.success:
+            note = "🏆  GREAT WORK! Log this concept in your Jr_AstroCamp Learning Journal to earn a digital badge."
+        else:
+            note = "💡  Re-fly the mission to reinforce your understanding. Each attempt builds real aerospace intuition!"
+        surface.blit(self.font_stem.render(note, True, (148, 163, 184)), (sx, sy))
 
         # ── Bottom Action Buttons ─────────────────────────────────────────────
         self.btn_replay.draw(surface)

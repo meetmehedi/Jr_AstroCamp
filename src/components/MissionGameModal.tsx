@@ -140,75 +140,121 @@ export const MissionGameModal: React.FC<MissionGameModalProps> = ({
     }
   };
 
+  const getStemLearningObjective = (gameType: string) => {
+    switch (gameType) {
+      case 'launch':
+        return {
+          concept: 'Orbital Mechanics & The Tsiolkovsky Rocket Equation',
+          desc: 'Learn how multi-stage rockets overcome gravity and drag using gravity turns to reach orbital velocity (~7.8 km/s).',
+          formula: 'Δv = Isp · g₀ · ln(m₀ / mf)  |  Orbital Speed: v_orb = √(GM/r)',
+        };
+      case 'docking':
+        return {
+          concept: 'Relative Orbital Dynamics & Proximity Capture',
+          desc: 'Master relative velocity and Clohessy-Wiltshire rendezvous physics where firing thrusters changes both altitude and speed.',
+          formula: 'F = m · a  |  Proximity Approach Rate < 0.5 m/s',
+        };
+      case 'lunar_landing':
+        return {
+          concept: 'Terminal Powered Descent & Gravitational Braking',
+          desc: 'Balance thrust-to-weight ratios and propellant reserves to brake from orbital velocity to touchdown (<2.5 m/s).',
+          formula: 'v² = v₀² + 2a·d  |  Impact Threshold < 2.5 m/s',
+        };
+      case 'rover':
+        return {
+          concept: 'Planetary Surface Mobility & Regolith Friction',
+          desc: 'Navigate alien terrain gradients, calculate wheel slip friction coefficients, and budget battery power per meter traversed.',
+          formula: 'F_friction = μ · N  |  Hazard Slope Angle < 25°',
+        };
+      case 'telescope':
+        return {
+          concept: 'Astronomical Optics, Diffraction & Photon Integration',
+          desc: 'Stabilize optical apertures, eliminate jitter blur, and cycle spectral filters to capture faint photons from the deep cosmos.',
+          formula: 'Diffraction Limit: θ = 1.22 · λ / D  |  Photon Exposure Ratio',
+        };
+      case 'deep_space':
+        return {
+          concept: 'N-Body Gravity Assists & Hyperbolic Trajectories',
+          desc: 'Use gravitational slingshots from planets to gain hyperbolic excess velocity and escape toward the interstellar heliopause.',
+          formula: 'Oberth Effect  |  Hyperbolic Excess: v_∞ = √(v² - v_esc²)',
+        };
+      default:
+        return {
+          concept: 'Aerospace Engineering & Telemetry Management',
+          desc: 'NASA systems flight rules, attitude steering, and fail-safe mission recovery.',
+          formula: 'NASA Systems Engineering Handbook (SP-6105)',
+        };
+    }
+  };
+
+  const stemData = getStemLearningObjective(mission.gameType);
+
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
-      <div className="relative w-full max-w-5xl bg-slate-900 border border-cyan-500/30 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[96vh]">
+    <div className="flight-modal-backdrop" onClick={onClose}>
+      <div className="flight-modal-container" onClick={(e) => e.stopPropagation()}>
         {/* Top Header Bar */}
-        <div className="px-4 sm:px-6 py-3 sm:py-4 bg-slate-900/90 border-b border-slate-800 flex items-center justify-between gap-2 flex-shrink-0">
-          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
-            <div className="p-2 bg-slate-800 rounded-lg border border-slate-700 shrink-0">
+        <div className="flight-modal-header">
+          <div className="flight-header-left">
+            <div className="flight-type-badge-icon">
               {getGameTypeIcon()}
             </div>
-            <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-1.5">
-                <span className="text-[11px] sm:text-xs font-mono text-cyan-400 tracking-wider">
-                  MISSION #{missionIndex + 1} OF 76 • {mission.year}
-                </span>
-                <span className="text-[10px] sm:text-[11px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700 font-mono truncate max-w-[140px]">
-                  {mission.programName}
-                </span>
+            <div>
+              <div className="flight-header-meta">
+                <span>MISSION #{missionIndex + 1} OF 76 • {mission.year}</span>
+                <span className="flight-program-pill">{mission.programName}</span>
                 {isAlreadyCompleted && (
-                  <span className="text-[10px] sm:text-[11px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
-                    <CheckCircle2 className="w-3 h-3" /> Completed
+                  <span className="flight-completed-pill">
+                    <CheckCircle2 size={12} /> Flown ✓
                   </span>
                 )}
               </div>
-              <h2 className="text-base sm:text-lg font-bold text-white tracking-wide truncate">{mission.missionName}</h2>
+              <h2 className="flight-mission-title">{mission.missionName}</h2>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flight-header-actions">
             <button
               onClick={() => setShowAstronautModel(!showAstronautModel)}
-              className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-xs font-mono transition"
+              className="flight-astro-toggle-btn"
               title="Inspect 3D NASA Astronaut Suit"
             >
-              <Bot className="w-3.5 h-3.5" />
-              {showAstronautModel ? 'Hide Astronaut' : '3D Astronaut'}
+              <Bot size={14} />
+              <span>{showAstronautModel ? 'Hide 3D Suit' : '3D EMU Suit'}</span>
             </button>
             <button
               onClick={() => {
                 if (phaserGameRef.current) destroyPhaserGame(phaserGameRef.current);
                 onClose();
               }}
-              className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition"
+              className="flight-close-btn"
+              aria-label="Close"
             >
-              <X className="w-5 h-5" />
+              <X size={20} />
             </button>
           </div>
         </div>
 
         {/* 3D Astronaut Inspector Overlay (Optional Toggle) */}
         {showAstronautModel && (
-          <div className="bg-slate-950 border-b border-indigo-500/30 p-4">
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2 text-xs font-mono text-indigo-400">
-                <Bot className="w-4 h-4" />
-                <span>NASA EXTRAVEHICULAR MOBILITY UNIT (EMU) 3D VIEWER</span>
+          <div style={{ background: '#050811', borderBottom: '1px solid rgba(99, 102, 241, 0.3)', padding: '16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', fontFamily: 'var(--font-mono)', color: '#818cf8' }}>
+                <Bot size={15} />
+                <span>NASA EXTRAVEHICULAR MOBILITY UNIT (EMU) 3D SPACESUIT VIEWER</span>
               </div>
               <a
                 href="https://sketchfab.com/3d-models/rigged-nasa-astronaut-spacesuit-61acdd14e58a46149b2f85821f84260e"
                 target="_blank"
                 rel="noreferrer"
-                className="text-xs text-indigo-300 hover:text-indigo-200 flex items-center gap-1"
+                style={{ fontSize: '11px', color: '#a5b4fc', display: 'flex', alignItems: 'center', gap: '4px', textDecoration: 'none' }}
               >
-                Model Source <ExternalLink className="w-3 h-3" />
+                Model Source <ExternalLink size={12} />
               </a>
             </div>
-            <div className="h-64 w-full rounded-xl overflow-hidden border border-indigo-900/50 bg-black">
+            <div style={{ height: '240px', width: '100%', borderRadius: '12px', overflow: 'hidden', border: '1px solid rgba(99, 102, 241, 0.4)', background: '#000' }}>
               <iframe
                 title="Rigged NASA Astronaut Spacesuit"
-                className="w-full h-full border-0"
+                style={{ width: '100%', height: '100%', border: 0 }}
                 src="https://sketchfab.com/models/61acdd14e58a46149b2f85821f84260e/embed?autostart=1&preload=1&ui_theme=dark"
                 allow="autoplay; fullscreen; xr-spatial-tracking"
               />
@@ -217,82 +263,88 @@ export const MissionGameModal: React.FC<MissionGameModalProps> = ({
         )}
 
         {/* Main Stage Content */}
-        <div className="relative flex-1 flex flex-col items-center justify-center p-4 min-h-[500px]">
+        <div className="flight-stage-container">
           {/* 1. BRIEFING STATE */}
           {missionState === 'briefing' && (
-            <div className="w-full max-w-3xl space-y-6 text-slate-200">
-              {/* Objective Card */}
-              <div className="p-5 rounded-xl bg-slate-950/70 border border-cyan-500/20 shadow-inner space-y-3">
-                <div className="flex items-center justify-between text-xs font-mono text-cyan-400">
-                  <span className="flex items-center gap-1.5">
-                    <Info className="w-4 h-4" /> FLIGHT DIRECTIVE BRIEFING
+            <div className="flight-briefing-wrap">
+              {/* Flight Directive & Primary Objective */}
+              <div className="flight-directive-panel">
+                <div className="flight-directive-top">
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <Info size={14} /> FLIGHT DIRECTIVE BRIEFING
                   </span>
-                  <span>SIMULATION TYPE: {getGameTypeLabel().toUpperCase()}</span>
+                  <span>DISCIPLINE: {getGameTypeLabel().toUpperCase()}</span>
                 </div>
-                <p className="text-sm text-slate-300 leading-relaxed">{mission.briefing}</p>
-                <div className="p-3 bg-cyan-950/30 border border-cyan-800/40 rounded-lg">
-                  <p className="text-xs text-cyan-200 font-medium">
-                    <strong className="text-cyan-400">PRIMARY OBJECTIVE:</strong> {mission.objective}
-                  </p>
+                <p className="flight-directive-text">{mission.briefing}</p>
+                <div className="flight-objective-box">
+                  <strong>PRIMARY OBJECTIVE:</strong>
+                  {mission.objective}
                 </div>
               </div>
 
-              {/* Grid: Controls & Operational Spec */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="p-4 rounded-xl bg-slate-800/40 border border-slate-700/50 space-y-2">
-                  <h4 className="text-xs font-mono text-slate-400 tracking-wider">FLIGHT CONTROLS</h4>
-                  <ul className="text-xs text-slate-300 space-y-1.5 font-mono">
-                    <li>• <span className="text-cyan-300">W / S or UP/DOWN</span>: Throttle Command</li>
-                    <li>• <span className="text-cyan-300">A / D or LEFT/RIGHT</span>: Gimbal Pitch / Steering</li>
-                    <li>• <span className="text-cyan-300">SPACEBAR</span>: Stage Separation / Booster MECO</li>
+              {/* WHAT WILL BE TAUGHT (STEM CURRICULUM BOX) */}
+              <div className="flight-stem-box">
+                <div className="flight-stem-title">
+                  <span>🎓 WHAT YOU WILL BE TAUGHT // AEROSPACE STEM CURRICULUM</span>
+                </div>
+                <div className="flight-stem-desc">
+                  <strong style={{ color: '#ffffff' }}>{stemData.concept}: </strong>
+                  {stemData.desc}
+                </div>
+                <div className="flight-stem-equation">
+                  <strong>PHYSICAL LAW / PRINCIPLE: </strong>
+                  {stemData.formula}
+                </div>
+              </div>
+
+              {/* Grid: Controls & Telemetry Fact */}
+              <div className="flight-grid-two">
+                <div className="flight-info-card">
+                  <div className="flight-card-label">COCKPIT FLIGHT CONTROLS</div>
+                  <ul className="flight-controls-list">
+                    <li>• <span>W / S or UP/DOWN</span>: Throttle Regulation</li>
+                    <li>• <span>A / D or LEFT/RIGHT</span>: Gimbal Pitch / Steering</li>
+                    <li>• <span>SPACEBAR</span>: Stage Separation / Booster MECO</li>
                   </ul>
                 </div>
 
-                <div className="p-4 rounded-xl bg-slate-800/40 border border-slate-700/50 space-y-2">
-                  <h4 className="text-xs font-mono text-slate-400 tracking-wider">HISTORICAL TELEMETRY FACT</h4>
-                  <p className="text-xs text-amber-300/90 leading-relaxed italic">
+                <div className="flight-info-card">
+                  <div className="flight-card-label">HISTORICAL TELEMETRY FACT</div>
+                  <p className="flight-fact-text">
                     "{mission.funFact}"
                   </p>
                 </div>
               </div>
 
-              {/* Simulation Mode Toggle (3D Photorealistic WebGL vs 2D Tactical) */}
-              <div className="flex items-center justify-between p-3.5 bg-slate-950/80 border border-cyan-500/30 rounded-xl">
-                <div className="flex items-center gap-2 text-xs font-mono">
-                  <Box className="w-4 h-4 text-cyan-400" />
-                  <span className="text-slate-300 font-bold">GRAPHICS ENGINE:</span>
+              {/* Simulation Engine Toggle */}
+              <div className="flight-engine-bar">
+                <div className="flight-engine-label">
+                  <Box size={16} />
+                  <span>GRAPHICS ENGINE:</span>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flight-engine-btn-group">
                   <button
                     onClick={() => setEngineMode('3d')}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold flex items-center gap-1.5 transition ${
-                      engineMode === '3d'
-                        ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-slate-950 shadow-md shadow-cyan-500/25'
-                        : 'bg-slate-800 text-slate-400 hover:text-slate-200'
-                    }`}
+                    className={`flight-engine-btn ${engineMode === '3d' ? 'flight-engine-btn-active' : 'flight-engine-btn-inactive'}`}
                   >
-                    <Sparkles className="w-3.5 h-3.5" /> 3D Photorealistic Engine (WebGL)
+                    <Sparkles size={13} /> 3D Photorealistic Engine (WebGL)
                   </button>
                   <button
                     onClick={() => setEngineMode('2d')}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold flex items-center gap-1.5 transition ${
-                      engineMode === '2d'
-                        ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/25'
-                        : 'bg-slate-800 text-slate-400 hover:text-slate-200'
-                    }`}
+                    className={`flight-engine-btn ${engineMode === '2d' ? 'flight-engine-btn-active' : 'flight-engine-btn-inactive'}`}
                   >
-                    <Layers className="w-3.5 h-3.5" /> 2D Tactical Engine
+                    <Layers size={13} /> 2D Tactical Engine
                   </button>
                 </div>
               </div>
 
               {/* Action Button */}
-              <div className="flex items-center justify-center pt-2">
+              <div className="flight-launch-action">
                 <button
                   onClick={launchSimulation}
-                  className="px-8 py-3.5 bg-gradient-to-r from-cyan-500 via-teal-400 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-black tracking-wider rounded-xl shadow-lg shadow-cyan-500/30 flex items-center gap-2 transform active:scale-95 transition text-sm"
+                  className="flight-launch-btn"
                 >
-                  <Play className="w-5 h-5 fill-current" />
+                  <Play size={18} fill="currentColor" />
                   LAUNCH 3D MISSION SIMULATION
                 </button>
               </div>
@@ -301,7 +353,7 @@ export const MissionGameModal: React.FC<MissionGameModalProps> = ({
 
           {/* 2. PLAYING STATE */}
           {missionState === 'playing' && engineMode === '3d' && (
-            <div className="w-full">
+            <div style={{ width: '100%' }}>
               <ThreeMissionSimulator
                 mission={mission}
                 onSuccess={(finalScore) => {
@@ -321,99 +373,130 @@ export const MissionGameModal: React.FC<MissionGameModalProps> = ({
           {/* 2B. 2D Phaser Canvas Container */}
           <div
             ref={containerRef}
-            className={`w-full h-[520px] max-w-[800px] flex items-center justify-center rounded-xl overflow-hidden shadow-2xl border border-slate-800 ${
-              missionState === 'playing' && engineMode === '2d' ? 'block' : 'hidden'
-            }`}
+            style={{
+              width: '100%',
+              height: '520px',
+              maxWidth: '800px',
+              display: missionState === 'playing' && engineMode === '2d' ? 'flex' : 'none',
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderRadius: '12px',
+              overflow: 'hidden',
+              boxShadow: '0 20px 60px rgba(0,0,0,0.8)',
+              border: '1px solid rgba(56,189,248,0.25)',
+              background: '#020617',
+            }}
           />
 
-          {/* 3. SUCCESS STATE */}
+          {/* 3. SUCCESS STATE (DEBRIEF) */}
           {missionState === 'success' && (
-            <div className="w-full max-w-lg p-6 bg-slate-950/90 border border-emerald-500/40 rounded-2xl shadow-2xl text-center space-y-5 animate-in fade-in zoom-in-95 duration-300">
-              <div className="inline-flex p-3 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/40">
-                <Award className="w-10 h-10" />
+            <div className="flight-debrief-card flight-debrief-success">
+              <div className="flight-debrief-icon-circle icon-circle-success">
+                <Award size={36} />
               </div>
 
               <div>
-                <h3 className="text-2xl font-black text-white tracking-wide">MISSION ACCOMPLISHED!</h3>
-                <p className="text-sm text-slate-400 mt-1">
-                  Flight telemetry verified for <strong className="text-emerald-300">{mission.missionName}</strong>
+                <h3 className="flight-debrief-title">MISSION ACCOMPLISHED!</h3>
+                <p className="flight-debrief-sub">
+                  Flight telemetry verified for <strong style={{ color: '#6ee7b7' }}>{mission.missionName}</strong>
                 </p>
               </div>
 
-              <div className="p-4 bg-slate-900 border border-slate-800 rounded-xl flex items-center justify-around">
+              <div className="flight-debrief-score-row">
                 <div>
-                  <span className="text-[11px] font-mono text-slate-400 uppercase">Flight Score</span>
-                  <p className="text-2xl font-bold text-amber-400 font-mono">{score}</p>
+                  <div style={{ fontSize: '11px', fontFamily: 'var(--font-mono)', color: '#94a3b8' }}>FLIGHT SCORE</div>
+                  <div className="flight-score-val">{score}</div>
                 </div>
-                <div className="h-8 w-px bg-slate-800" />
+                <div style={{ width: '1px', height: '36px', background: 'rgba(255,255,255,0.1)' }} />
                 <div>
-                  <span className="text-[11px] font-mono text-slate-400 uppercase">Campaign Rank</span>
-                  <p className="text-sm font-bold text-emerald-400 font-mono">
-                    {completedMissions.length} / 76 MISSIONS
-                  </p>
+                  <div style={{ fontSize: '11px', fontFamily: 'var(--font-mono)', color: '#94a3b8' }}>CAMPAIGN RANK</div>
+                  <div className="flight-rank-val">
+                    {completedMissions.length} / 76 FLIGHTS
+                  </div>
                 </div>
               </div>
 
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+              <div className="flight-stem-box" style={{ textAlign: 'left' }}>
+                <div className="flight-stem-title">
+                  <span>🎯 STEM LESSON MASTERED</span>
+                </div>
+                <div className="flight-stem-desc">
+                  You successfully executed <strong style={{ color: '#ffffff' }}>{stemData.concept}</strong>.
+                  All aerodynamic, propellant, and velocity bounds remained nominal.
+                </div>
+              </div>
+
+              <div className="flight-debrief-btns">
                 <button
                   onClick={handleRetry}
-                  className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium text-sm flex items-center justify-center gap-2 transition"
+                  className="flight-replay-btn"
                 >
-                  <RotateCcw className="w-4 h-4" /> Replay
+                  <RotateCcw size={14} /> Replay
                 </button>
                 {nextMission ? (
                   <button
                     onClick={handleNextMission}
-                    className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/25 transition"
+                    className="flight-next-btn"
                   >
-                    Next Mission: {nextMission.missionName} <ChevronRight className="w-4 h-4" />
+                    Next Mission: {nextMission.missionName} <ChevronRight size={15} />
                   </button>
                 ) : (
                   <button
                     onClick={onClose}
-                    className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-cyan-500 text-slate-950 font-bold text-sm"
+                    className="flight-next-btn"
                   >
-                    Return to Mission Hub
+                    Return to Campaign Map
                   </button>
                 )}
               </div>
             </div>
           )}
 
-          {/* 4. FAILURE STATE */}
+          {/* 4. FAILURE STATE (DEBRIEF) */}
           {missionState === 'failure' && (
-            <div className="w-full max-w-lg p-6 bg-slate-950/90 border border-red-500/40 rounded-2xl shadow-2xl text-center space-y-5 animate-in fade-in zoom-in-95 duration-300">
-              <div className="inline-flex p-3 rounded-full bg-red-500/20 text-red-400 border border-red-500/40">
-                <ShieldAlert className="w-10 h-10" />
+            <div className="flight-debrief-card flight-debrief-failure">
+              <div className="flight-debrief-icon-circle icon-circle-failure">
+                <ShieldAlert size={36} />
               </div>
 
               <div>
-                <h3 className="text-xl font-bold text-white tracking-wide">SIMULATION ABORTED</h3>
-                <p className="text-xs text-red-300/80 font-mono mt-1">TELEMETRY ANOMALY DETECTED</p>
-              </div>
-
-              <div className="p-4 bg-red-950/20 border border-red-900/40 rounded-xl text-left">
-                <div className="flex items-center gap-2 text-xs font-mono text-red-400 mb-1">
-                  <AlertTriangle className="w-4 h-4" />
-                  <span>FLIGHT LOG INCIDENT</span>
-                </div>
-                <p className="text-xs text-slate-300 font-mono leading-relaxed">
-                  {failureReason || 'Flight parameters exceeded safe operational envelopes.'}
+                <h3 className="flight-debrief-title" style={{ color: '#f87171' }}>SIMULATION ABORTED</h3>
+                <p className="flight-debrief-sub" style={{ color: '#fca5a5', fontFamily: 'var(--font-mono)' }}>
+                  TELEMETRY ANOMALY DETECTED
                 </p>
               </div>
 
-              <div className="flex items-center justify-center gap-3 pt-2">
+              <div className="flight-incident-box">
+                <div className="flight-incident-label">
+                  <AlertTriangle size={14} />
+                  <span>FLIGHT LOG INCIDENT &amp; CAUSE</span>
+                </div>
+                <p className="flight-incident-desc">
+                  {failureReason || 'Flight parameters exceeded safe aerospace operational envelopes.'}
+                </p>
+              </div>
+
+              <div className="flight-stem-box" style={{ textAlign: 'left', borderColor: 'rgba(239, 68, 68, 0.4)', background: 'rgba(239, 68, 68, 0.08)' }}>
+                <div className="flight-stem-title" style={{ color: '#f87171' }}>
+                  <span>🔬 PHYSICS ROOT-CAUSE TAKEAWAY</span>
+                </div>
+                <div className="flight-stem-desc">
+                  Real mission teams fail, calibrate, and retry. Review your throttle and angle against <strong style={{ color: '#ffffff' }}>{stemData.concept}</strong>.
+                </div>
+              </div>
+
+              <div className="flight-debrief-btns">
                 <button
                   onClick={onClose}
-                  className="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-medium transition"
+                  className="flight-replay-btn"
                 >
                   Exit to Catalog
                 </button>
                 <button
                   onClick={handleRetry}
-                  className="px-6 py-2.5 rounded-xl bg-red-500 hover:bg-red-400 text-white font-bold text-sm flex items-center gap-2 shadow-lg shadow-red-500/25 transition"
+                  className="flight-retry-red-btn"
                 >
-                  <RotateCcw className="w-4 h-4" />
+                  <RotateCcw size={14} />
                   Re-attempt Simulation
                 </button>
               </div>
@@ -422,9 +505,9 @@ export const MissionGameModal: React.FC<MissionGameModalProps> = ({
         </div>
 
         {/* Footer info bar */}
-        <div className="px-6 py-3 bg-slate-900/60 border-t border-slate-800 text-[11px] font-mono text-slate-500 flex items-center justify-between flex-shrink-0">
+        <div className="flight-footer-bar">
           <span>TEAM MYSTERIO • ASTRO CAMP NASA GAME ENGINE (PHASER 3 + THREE.JS)</span>
-          <span>REAL CSV MISSIONS: 76 OPERATIONAL FLIGHTS</span>
+          <span>76 OPERATIONAL FLIGHTS • MERCURY TO ARTEMIS</span>
         </div>
       </div>
     </div>

@@ -23,6 +23,7 @@ import { AudioTeachingFlashcard } from './components/AudioTeachingFlashcard';
 import { MissionNotebookModal } from './components/MissionNotebookModal';
 import { MissionGameModal } from './components/MissionGameModal';
 import { MissionCampaignModal } from './components/MissionCampaignModal';
+import { ComicBookModal } from './components/ComicBookModal';
 import { soundFx } from './utils/audioEffects';
 import { speechEngine } from './utils/speechEngine';
 import {
@@ -109,6 +110,8 @@ export const App: React.FC = () => {
   // New Astro Camp modals
   const [isLearningHubOpen, setIsLearningHubOpen] = useState(false);
   const [isAboutOpen, setIsAboutOpen] = useState(false);
+  const [isComicBookOpen, setIsComicBookOpen] = useState(false);
+  const [selectedComicIssueId, setSelectedComicIssueId] = useState<string | undefined>(undefined);
 
   // General Modals
   const [isNasaModalOpen, setIsNasaModalOpen] = useState(false);
@@ -339,7 +342,23 @@ export const App: React.FC = () => {
 
   // Show landing page on first visit (placed safely after all hooks)
   if (!hasLaunched) {
-    return <LandingPage onEnter={handleEnterMissionControl} />;
+    return (
+      <>
+        <LandingPage 
+          onEnter={handleEnterMissionControl} 
+          onOpenComics={() => {
+            setSelectedComicIssueId(undefined);
+            setIsComicBookOpen(true);
+            soundFx.playClick(750);
+          }}
+        />
+        <ComicBookModal
+          isOpen={isComicBookOpen}
+          onClose={() => setIsComicBookOpen(false)}
+          initialIssueId={selectedComicIssueId}
+        />
+      </>
+    );
   }
 
   return (
@@ -387,6 +406,19 @@ export const App: React.FC = () => {
           <button onClick={() => { setIsLearningHubOpen(true); soundFx.playClick(700); }} className="nav-link-btn">
             <BookOpen size={15} className="text-violet-400" /><span>Learn</span>
           </button>
+          <button
+            onClick={() => { setSelectedComicIssueId(undefined); setIsComicBookOpen(true); soundFx.playClick(750); }}
+            className="nav-link-btn"
+            style={{ 
+              background: 'linear-gradient(90deg, rgba(245, 158, 11, 0.22), rgba(234, 88, 12, 0.22))', 
+              border: '1px solid rgba(245, 158, 11, 0.5)', 
+              color: '#fbbf24', 
+              fontWeight: 700 
+            }}
+            title="NASA STEM Graphic Novels (8 Issues)"
+          >
+            <BookOpen size={15} className="text-amber-400" /><span>📖 Comics (8 Issues)</span>
+          </button>
           <button onClick={() => { setIsPlanetaryMapOpen(true); soundFx.playClick(700); }} className="nav-link-btn">
             <Compass size={15} className="text-violet-400" /><span>Missions</span>
           </button>
@@ -411,6 +443,23 @@ export const App: React.FC = () => {
 
         {/* Mobile: Quick Actions + Hamburger */}
         <div className="nav-mobile-right">
+          {/* Quick-access comic button */}
+          <button
+            onClick={() => { setSelectedComicIssueId(undefined); setIsComicBookOpen(true); soundFx.playClick(750); }}
+            className="nav-link-btn nav-game-btn-mobile"
+            style={{ 
+              background: 'linear-gradient(90deg, rgba(245, 158, 11, 0.22), rgba(234, 88, 12, 0.22))', 
+              border: '1px solid rgba(245, 158, 11, 0.5)', 
+              color: '#fbbf24', 
+              fontWeight: 700, 
+              padding: '6px 10px' 
+            }}
+            title="Read Comics"
+          >
+            <BookOpen size={14} className="text-amber-400" />
+            <span className="nav-game-label">Comics</span>
+          </button>
+
           {/* Quick-access game button always visible */}
           <button
             onClick={() => { setIsCampaignMapOpen(true); soundFx.playClick(850); }}
@@ -453,6 +502,7 @@ export const App: React.FC = () => {
             {/* Nav Links */}
             {[
               { icon: <Home size={16} />, label: 'Home', color: '#94a3b8', action: () => { if (typeof window !== 'undefined') sessionStorage.removeItem('astro_camp_launched'); setHasLaunched(false); } },
+              { icon: <BookOpen size={16} />, label: '📖 Comic Books (8 Issues)', color: '#fbbf24', action: () => { setSelectedComicIssueId(undefined); setIsComicBookOpen(true); } },
               { icon: <BookOpen size={16} />, label: 'Learning Hub', color: '#a78bfa', action: () => setIsLearningHubOpen(true) },
               { icon: <Compass size={16} />, label: 'Mission Map', color: '#a78bfa', action: () => setIsPlanetaryMapOpen(true) },
               { icon: <Gamepad2 size={16} />, label: `76 Mission Games (${completedMissions.length}/76)`, color: '#38bdf8', action: () => setIsCampaignMapOpen(true) },
@@ -567,14 +617,40 @@ export const App: React.FC = () => {
             {/* 1. Cinematic Stage */}
             {gameState.activeEvent && (
               <div className="event-dilemma-card" style={{ padding: '18px 22px' }}>
-                <div className="event-headline-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div className="event-headline-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
                   <div>
                     <div className="event-badge">SOL {gameState.activeEvent.sol} MISSION BRIEFING</div>
                     <h2 className="event-title">{gameState.activeEvent.title}</h2>
                   </div>
-                  <span style={{ fontFamily: 'monospace', fontSize: '11px', color: '#64748b' }}>
-                    NARRATIVE STAGE · 2.39:1 CINEMASCOPE
-                  </span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <button
+                      onClick={() => {
+                        setSelectedComicIssueId(undefined);
+                        setIsComicBookOpen(true);
+                        soundFx.playClick(750);
+                      }}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        padding: '5px 12px',
+                        background: 'rgba(245, 158, 11, 0.18)',
+                        border: '1px solid rgba(245, 158, 11, 0.45)',
+                        borderRadius: '6px',
+                        color: '#fbbf24',
+                        fontSize: '0.72rem',
+                        fontWeight: 700,
+                        cursor: 'pointer'
+                      }}
+                      title="Read NASA STEM Graphic Novel"
+                    >
+                      <BookOpen size={13} className="text-amber-400" />
+                      <span>📖 STEM Graphic Novel</span>
+                    </button>
+                    <span style={{ fontFamily: 'monospace', fontSize: '11px', color: '#64748b' }}>
+                      NARRATIVE STAGE
+                    </span>
+                  </div>
                 </div>
 
                 {/* Photorealistic Interstellar Scene */}
@@ -877,6 +953,17 @@ export const App: React.FC = () => {
         activeMissionId={currentMission.id}
         onLaunchMission={handleLaunchMissionGame}
         completedMissions={completedMissions}
+        onOpenComicReader={(issueId) => {
+          setSelectedComicIssueId(issueId);
+          setIsComicBookOpen(true);
+        }}
+      />
+
+      {/* NASA STEM Graphic Novel Comic Book Reader Modal */}
+      <ComicBookModal
+        isOpen={isComicBookOpen}
+        onClose={() => setIsComicBookOpen(false)}
+        initialIssueId={selectedComicIssueId}
       />
 
       {/* 76 NASA Playable Missions Campaign Map */}

@@ -61,6 +61,39 @@ CONTROLS = {
     ],
 }
 
+STEM_CURRICULUM = {
+    'launch': (
+        "AEROSPACE STEM: Orbital Mechanics & Tsiolkovsky Rocket Equation",
+        "Multi-stage rockets overcome gravity/drag via a gravity turn to reach orbital velocity (~7.8 km/s).",
+        "Δv = Isp · g₀ · ln(m₀/mf)   |   v_orbit = √(GM/r)"
+    ),
+    'docking': (
+        "AEROSPACE STEM: Relative Orbital Dynamics & Proximity Capture",
+        "Clohessy-Wiltshire rendezvous: firing thrusters changes both speed AND altitude simultaneously.",
+        "F = m·a   |   Approach Rate < 0.5 m/s"
+    ),
+    'lander': (
+        "AEROSPACE STEM: Terminal Powered Descent & Gravitational Braking",
+        "Braking from orbital velocity to touchdown requires managing T/W ratio and fuel reserves precisely.",
+        "v² = v₀² + 2a·d   |   Max Impact Speed < 2.5 m/s"
+    ),
+    'rover': (
+        "AEROSPACE STEM: Planetary Mobility & Regolith Friction Coefficients",
+        "Terrain gradient, wheel slip, and battery energy per meter govern safe planetary surface mobility.",
+        "F_friction = μ·N   |   Safe Slope Angle < 25°"
+    ),
+    'telescope': (
+        "AEROSPACE STEM: Astronomical Optics, Diffraction & Photon Integration",
+        "Diffraction limits resolution; photon collection efficiency depends on aperture diameter and exposure time.",
+        "Diffraction: θ = 1.22 · λ/D   |   Photon SNR = signal/√noise"
+    ),
+    'deepspace': (
+        "AEROSPACE STEM: N-Body Gravity Assists & Hyperbolic Trajectories",
+        "Gravitational slingshots provide free velocity boosts via the Oberth effect at planetary periapsis.",
+        "Oberth: ΔE = m·v·Δv   |   v_∞ = √(v² − v_esc²)"
+    ),
+}
+
 class BriefingScene:
     W, H = 1024, 720
 
@@ -82,6 +115,7 @@ class BriefingScene:
         self.font_body     = get_font(12, bold=False, mono=True)
         self.font_ctrl     = get_font(12, bold=True, mono=True)
         self.font_mono     = get_font(11, bold=True, mono=True)
+        self.font_stem     = get_font(11, bold=True, mono=True)
 
         type_col, type_label, tagline = TYPE_META.get(
             mission.game_type, (COLOR_CYAN, 'FLIGHT MISSION', 'NASA Mission Flight Profile'))
@@ -141,9 +175,9 @@ class BriefingScene:
         # Discipline and Tagline
         surface.blit(self.font_heading.render(f"DISCIPLINE: [{type_label}] - {tagline.upper()}", True, type_col), (26, 80))
 
-        # ── Main Content Area ─────────────────────────────────────────────────
+        # ── Main Content Area (two columns + STEM box at bottom) ──────────────
         main_top = 118
-        main_h   = 506
+        main_h   = 346  # shortened to make room for STEM box
 
         # Left Column: Primary Objectives & NASA Mission Archives
         draw_hud_panel(surface, pygame.Rect(24, main_top, 470, main_h), title="FLIGHT DIRECTIVE & OBJECTIVES")
@@ -152,14 +186,14 @@ class BriefingScene:
         surface.blit(self.font_heading.render("PRIMARY MISSION OBJECTIVE:", True, COLOR_GOLD), (40, y)); y += 22
         y = draw_wrapped_text(surface, self.mission.objective, 40, y, 436, self.font_body, COLOR_TEXT, 5)
 
-        y += 18
-        pygame.draw.line(surface, COLOR_PANEL_BORDER, (40, y), (480, y), 1); y += 14
+        y += 12
+        pygame.draw.line(surface, COLOR_PANEL_BORDER, (40, y), (480, y), 1); y += 12
 
-        surface.blit(self.font_heading.render("HISTORICAL NASA FLIGHT CONTEXT:", True, COLOR_CYAN), (40, y)); y += 22
+        surface.blit(self.font_heading.render("HISTORICAL NASA FLIGHT CONTEXT:", True, COLOR_CYAN), (40, y)); y += 20
         proto = self.mission.protocol.replace("Manual Protocol:", "").strip()
-        if len(proto) > 380:
-            proto = proto[:377] + "..."
-        y = draw_wrapped_text(surface, proto, 40, y, 436, self.font_body, (196, 181, 253), 5)
+        if len(proto) > 340:
+            proto = proto[:337] + "..."
+        draw_wrapped_text(surface, proto, 40, y, 436, self.font_body, (196, 181, 253), 5)
 
         # Right Column: Avionics & Flight Rules
         draw_hud_panel(surface, pygame.Rect(510, main_top, 490, main_h), title="AVIONICS & FLIGHT CONTROL RULES")
@@ -171,10 +205,10 @@ class BriefingScene:
         for line in ctrl_lines:
             surface.blit(self.font_ctrl.render(line, True, COLOR_TEXT), (526, ry)); ry += 26
 
-        ry += 14
-        pygame.draw.line(surface, COLOR_PANEL_BORDER, (526, ry), (980, ry), 1); ry += 16
+        ry += 12
+        pygame.draw.line(surface, COLOR_PANEL_BORDER, (526, ry), (980, ry), 1); ry += 14
 
-        surface.blit(self.font_heading.render("VEHICLE & FLIGHT PARAMETERS:", True, type_col), (526, ry)); ry += 24
+        surface.blit(self.font_heading.render("VEHICLE & FLIGHT PARAMETERS:", True, type_col), (526, ry)); ry += 22
 
         params = self.mission.params
         param_font = get_font(12, bold=True, mono=True)
@@ -194,10 +228,48 @@ class BriefingScene:
         # High Score status
         if storage.is_completed(self.mission.id):
             best = storage.scores.get(self.mission.id, 0)
-            ry += 16
-            pygame.draw.rect(surface, (6, 95, 70), (526, ry, 456, 36), border_radius=2)
-            surface.blit(self.font_heading.render(f"FLIGHT LOG: PREVIOUS HIGH SCORE // {best} PTS", True, COLOR_EMERALD), (540, ry + 10))
+            ry += 10
+            pygame.draw.rect(surface, (6, 95, 70), (526, ry, 456, 32), border_radius=2)
+            surface.blit(self.font_heading.render(f"PERSONAL BEST: {best} PTS — MISSION ALREADY FLOWN ✓", True, COLOR_EMERALD), (538, ry + 8))
+
+        # ── STEM CURRICULUM BOX (What the student will be taught) ────────────
+        stem_top = main_top + main_h + 10
+        stem_h = 108
+        pygame.draw.rect(surface, (20, 10, 40), (24, stem_top, self.W - 48, stem_h), border_radius=4)
+        pygame.draw.rect(surface, (139, 92, 246), (24, stem_top, self.W - 48, stem_h), 1, border_radius=4)
+
+        stem = STEM_CURRICULUM.get(self.mission.game_type, (
+            "AEROSPACE STEM: Engineering & Mission Planning",
+            "Learn real NASA systems engineering: checklists, failure modes, and crew safety protocols.",
+            "NASA SP-6105: Systems Engineering Handbook"
+        ))
+
+        # Purple accent bar on left
+        pygame.draw.rect(surface, (139, 92, 246), (24, stem_top, 4, stem_h), border_radius=2)
+
+        sx = 36
+        sy = stem_top + 10
+
+        # Label
+        label_surf = self.font_stem.render("🎓  WHAT YOU WILL BE TAUGHT:", True, (192, 132, 252))
+        surface.blit(label_surf, (sx, sy)); sy += 20
+
+        # Concept title
+        concept_surf = self.font_heading.render(stem[0], True, (255, 255, 255))
+        surface.blit(concept_surf, (sx, sy)); sy += 20
+
+        # Description
+        desc = stem[1]
+        if len(desc) > 130:
+            desc = desc[:127] + "..."
+        desc_surf = self.font_body.render(desc, True, (203, 213, 225))
+        surface.blit(desc_surf, (sx, sy)); sy += 18
+
+        # Formula
+        formula_surf = self.font_stem.render(f"PHYSICAL FORMULA: {stem[2]}", True, (74, 222, 128))
+        surface.blit(formula_surf, (sx, sy))
 
         # ── Buttons ──────────────────────────────────────────────────────────
         self.btn_back.draw(surface)
         self.btn_launch.draw(surface)
+
