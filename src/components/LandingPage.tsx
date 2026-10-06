@@ -1,8 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react';
 
+type LearningHubTab = 'NOTEBOOK' | 'AUDIO' | 'VIDEO' | 'COMIC' | 'BRIEFINGS' | 'CATALOG';
+
 interface LandingPageProps {
   onEnter: () => void;
   onOpenComics?: () => void;
+  onOpenLearningHub?: (tab: LearningHubTab) => void;
 }
 
 // ── Starfield Canvas ──────────────────────────────────────────────────────────
@@ -106,7 +109,7 @@ const TEAM = [
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
-export const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onOpenComics }) => {
+export const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onOpenComics, onOpenLearningHub }) => {
   const [warping, setWarping] = useState(false);
 
   const handleEnter = () => {
@@ -169,8 +172,48 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onOpenComics 
                 onClick={onOpenComics}
                 id="landing-read-comics"
               >
-                📖&nbsp; Read Comic Books (8 Issues)
+                📖&nbsp; Comic Books
               </button>
+            )}
+            {onOpenLearningHub && (
+              <>
+                <button
+                  className="landing-enter-btn"
+                  style={{
+                    background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.9), rgba(5, 150, 105, 0.9))',
+                    boxShadow: '0 0 25px rgba(16, 185, 129, 0.35)',
+                    border: '1px solid rgba(167, 243, 208, 0.5)'
+                  }}
+                  onClick={() => onOpenLearningHub('NOTEBOOK')}
+                  id="landing-notebook-btn"
+                >
+                  📓&nbsp; Student Notes
+                </button>
+                <button
+                  className="landing-enter-btn"
+                  style={{
+                    background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.9), rgba(2, 132, 199, 0.9))',
+                    boxShadow: '0 0 25px rgba(56, 189, 248, 0.35)',
+                    border: '1px solid rgba(186, 230, 253, 0.5)'
+                  }}
+                  onClick={() => onOpenLearningHub('AUDIO')}
+                  id="landing-audio-btn"
+                >
+                  🎙️&nbsp; Audio Lessons
+                </button>
+                <button
+                  className="landing-enter-btn"
+                  style={{
+                    background: 'linear-gradient(135deg, rgba(236, 72, 153, 0.9), rgba(190, 24, 93, 0.9))',
+                    boxShadow: '0 0 25px rgba(236, 72, 153, 0.35)',
+                    border: '1px solid rgba(251, 207, 232, 0.5)'
+                  }}
+                  onClick={() => onOpenLearningHub('VIDEO')}
+                  id="landing-video-btn"
+                >
+                  🎬&nbsp; Video Modules
+                </button>
+              </>
             )}
           </div>
 

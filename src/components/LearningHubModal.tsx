@@ -1,24 +1,28 @@
 import React, { useState } from 'react';
-import { TEACHING_FLASHCARDS, type TeachingFlashcard } from '../data/teachingFlashcards';
+import type { TeachingFlashcard } from '../data/teachingFlashcards';
 import { MISSION_EVENTS } from '../data/events';
 import type { MissionEvent } from '../types/game';
 import { NASA_MISSIONS } from '../data/nasaMissions';
 import { NASA_MISSIONS_CATALOG, type NasaCatalogMission } from '../data/nasaMissionCatalog';
-import { X, Volume2, VolumeX, Radio, Square, Search, Play, BookOpen, Sparkles } from 'lucide-react';
+import { X, Volume2, VolumeX, Radio, Search, Play, BookOpen, Sparkles } from 'lucide-react';
 import { speechEngine } from '../utils/speechEngine';
+import { HandwrittenNotebookView } from './HandwrittenNotebookView';
+import { AudioLessonPlayerView } from './AudioLessonPlayerView';
+import { VideoLessonPlayerView } from './VideoLessonPlayerView';
 
 interface LearningHubModalProps {
   isOpen: boolean;
   onClose: () => void;
   activeEvent: MissionEvent | null;
-  collectedFlashcards: TeachingFlashcard[];
+  collectedFlashcards?: TeachingFlashcard[];
   activeMissionId: string;
   onLaunchMission?: (missionId: string) => void;
   completedMissions?: string[];
   onOpenComicReader?: (issueId?: string) => void;
+  initialTab?: HubTab;
 }
 
-type HubTab = 'COMIC' | 'AUDIO' | 'NOTEBOOK' | 'BRIEFINGS' | 'CATALOG';
+type HubTab = 'NOTEBOOK' | 'AUDIO' | 'VIDEO' | 'COMIC' | 'BRIEFINGS' | 'CATALOG';
 
 const SPEAKER_META: Record<string, { emoji: string; name: string; color: string }> = {
   CADET_MAYA:      { emoji: '👩‍🚀', name: 'Cadet Maya',        color: '#38bdf8' },
@@ -27,40 +31,39 @@ const SPEAKER_META: Record<string, { emoji: string; name: string; color: string 
   SYSTEM_AI:       { emoji: '🤖',   name: 'Artemis Core AI',  color: '#ef4444' },
 };
 
-const CATEGORY_LABELS: Record<string, string> = {
-  LIFE_SUPPORT: 'Life Support',
-  RADIATION:    'Radiation',
-  ENERGY:       'Energy',
-  GEOLOGY:      'Geology',
-  PROPULSION:   'Propulsion',
-  ASTROBIOLOGY: 'Astrobiology',
-};
+
 
 export const LearningHubModal: React.FC<LearningHubModalProps> = ({
   isOpen,
   onClose,
   activeEvent,
-  collectedFlashcards,
   activeMissionId,
   onLaunchMission,
   completedMissions,
   onOpenComicReader,
+  initialTab,
 }) => {
-  const [activeTab, setActiveTab] = useState<HubTab>('COMIC');
+  const [activeTab, setActiveTab] = useState<HubTab>(initialTab || 'NOTEBOOK');
+
+  React.useEffect(() => {
+    if (initialTab) {
+      setActiveTab(initialTab);
+    }
+  }, [initialTab, isOpen]);
+
   const [selectedComicIdx, setSelectedComicIdx] = useState<number>(0);
-  const [speakingCardId, setSpeakingCardId] = useState<string | null>(null);
+
   const [speakingMissionId, setSpeakingMissionId] = useState<string | null>(null);
   const [speakingCatalogId, setSpeakingCatalogId] = useState<string | null>(null);
   const [catalogSearch, setCatalogSearch] = useState('');
   const [selectedProgram, setSelectedProgram] = useState('ALL');
   const [selectedStatus, setSelectedStatus] = useState('ALL');
-  const [audioViewMode, setAudioViewMode] = useState<'ALL' | 'COLLECTED'>('ALL');
+
 
   if (!isOpen) return null;
 
   const stopSpeech = () => {
     speechEngine.stop();
-    setSpeakingCardId(null);
     setSpeakingMissionId(null);
     setSpeakingCatalogId(null);
   };
@@ -70,16 +73,7 @@ export const LearningHubModal: React.FC<LearningHubModalProps> = ({
     onClose();
   };
 
-  const handlePlayCard = (card: TeachingFlashcard) => {
-    if (speakingCardId === card.id) {
-      stopSpeech();
-      return;
-    }
-    stopSpeech();
-    const text = `${card.title}. ${card.audioScript} Key takeaway: ${card.ageAdaptations.CADET.keyTakeaway}`;
-    setSpeakingCardId(card.id);
-    speechEngine.speak(text, 'CADET_MAYA', () => setSpeakingCardId(null), () => setSpeakingCardId(null));
-  };
+
 
   const handlePlayBriefing = (missionId: string, audio: string) => {
     if (speakingMissionId === missionId) {
@@ -120,9 +114,10 @@ export const LearningHubModal: React.FC<LearningHubModalProps> = ({
   });
 
   const TABS: { id: HubTab; label: string; icon: string }[] = [
-    { id: 'COMIC',     label: 'Comic Reader',        icon: '📖' },
-    { id: 'AUDIO',     label: 'Audio Lessons',        icon: '🔊' },
-    { id: 'NOTEBOOK',  label: 'My Notebook',          icon: '📓' },
+    { id: 'NOTEBOOK',  label: 'Student Notebook',     icon: '📓' },
+    { id: 'AUDIO',     label: 'Audio Lessons',        icon: '🎙️' },
+    { id: 'VIDEO',     label: 'Video Modules',        icon: '🎬' },
+    { id: 'COMIC',     label: 'Comic Reader',         icon: '📖' },
     { id: 'BRIEFINGS', label: 'Outpost Briefs',       icon: '🛰️' },
     { id: 'CATALOG',   label: 'NASA Missions (76)',   icon: '🚀' },
   ];
@@ -319,116 +314,20 @@ export const LearningHubModal: React.FC<LearningHubModalProps> = ({
             );
           })()}
 
-          {/* ── AUDIO LESSONS ────────────────────────────────────────────── */}
-          {activeTab === 'AUDIO' && (() => {
-            const displayCards = audioViewMode === 'ALL' ? TEACHING_FLASHCARDS : collectedFlashcards;
-            return (
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', flexWrap: 'wrap', gap: '8px' }}>
-                  <div style={{ fontSize: '0.8rem', color: '#94a3b8' }}>
-                    <strong>Team Mysterio Curriculum:</strong> Audio-narrated STEM flashcards powered by text-to-speech.
-                  </div>
-                  <div style={{ display: 'flex', gap: '6px' }}>
-                    <button
-                      onClick={() => setAudioViewMode('ALL')}
-                      style={{
-                        padding: '4px 10px',
-                        borderRadius: '6px',
-                        fontSize: '0.75rem',
-                        fontWeight: 600,
-                        background: audioViewMode === 'ALL' ? 'rgba(56, 189, 248, 0.25)' : 'rgba(30, 41, 59, 0.6)',
-                        border: audioViewMode === 'ALL' ? '1px solid #38bdf8' : '1px solid rgba(255, 255, 255, 0.1)',
-                        color: audioViewMode === 'ALL' ? '#38bdf8' : '#94a3b8',
-                        cursor: 'pointer',
-                      }}
-                    >
-                      All Lessons ({TEACHING_FLASHCARDS.length})
-                    </button>
-                    <button
-                      onClick={() => setAudioViewMode('COLLECTED')}
-                      style={{
-                        padding: '4px 10px',
-                        borderRadius: '6px',
-                        fontSize: '0.75rem',
-                        fontWeight: 600,
-                        background: audioViewMode === 'COLLECTED' ? 'rgba(56, 189, 248, 0.25)' : 'rgba(30, 41, 59, 0.6)',
-                        border: audioViewMode === 'COLLECTED' ? '1px solid #38bdf8' : '1px solid rgba(255, 255, 255, 0.1)',
-                        color: audioViewMode === 'COLLECTED' ? '#38bdf8' : '#94a3b8',
-                        cursor: 'pointer',
-                      }}
-                    >
-                      Unlocked in Play ({collectedFlashcards.length})
-                    </button>
-                  </div>
-                </div>
+          {/* ── HANDWRITTEN STUDENT NOTEBOOK (6 CURRICULUM MODULES) ────────── */}
+          {activeTab === 'NOTEBOOK' && (
+            <HandwrittenNotebookView onLaunchMission={onLaunchMission} />
+          )}
 
-                <div className="hub-audio-grid">
-                  {displayCards.map((card) => {
-                    const isPlaying = speakingCardId === card.id;
-                    return (
-                      <div key={card.id} className="hub-audio-card">
-                        <div className="hub-audio-emoji">{card.emoji}</div>
-                        <div className="hub-audio-title">{card.title}</div>
-                        <div className="hub-audio-cat">{CATEGORY_LABELS[card.category] ?? card.category}</div>
-                        <p className="hub-audio-desc">{card.shortSummary}</p>
-                        {card.equationOrFormula && (
-                          <div style={{ fontFamily: 'monospace', fontSize: '0.72rem', color: '#43ffa0', marginBottom: '10px', background: 'rgba(67,255,160,0.06)', padding: '6px 10px', borderRadius: '6px', border: '1px solid rgba(67,255,160,0.15)' }}>
-                            {card.equationOrFormula}
-                          </div>
-                        )}
-                        <button
-                          className={`hub-audio-play-btn ${isPlaying ? 'playing' : ''}`}
-                          onClick={() => handlePlayCard(card)}
-                        >
-                          {isPlaying ? <><Square size={13} /> Stop Audio</> : <><Volume2 size={13} /> Play Audio Lesson</>}
-                        </button>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            );
-          })()}
+          {/* ── AUDIO LESSONS & PODCAST (6 CURRICULUM MODULES) ────────────── */}
+          {activeTab === 'AUDIO' && (
+            <AudioLessonPlayerView onLaunchMission={onLaunchMission} />
+          )}
 
-          {/* ── MY NOTEBOOK ──────────────────────────────────────────────── */}
-          {activeTab === 'NOTEBOOK' && (() => {
-            const displayCards = TEACHING_FLASHCARDS;
-            return (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <div style={{ marginBottom: '4px', fontSize: '0.8rem', color: '#94a3b8' }}>
-                  Handwritten-style mission journal entries authored by Team Mysterio with real NASA technical references.
-                </div>
-                {displayCards.map((card, idx) => (
-                  <div key={card.id} style={{ background: 'rgba(15,23,42,0.8)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '12px', padding: '18px', position: 'relative' }}>
-                    <div style={{ position: 'absolute', top: '14px', right: '14px', fontFamily: 'monospace', fontSize: '0.65rem', color: '#64748b' }}>
-                      ENTRY #{String(idx + 1).padStart(2, '0')}
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                      <span style={{ fontSize: '1.2rem' }}>{card.emoji}</span>
-                      <span style={{ fontWeight: 700, fontSize: '0.92rem', color: '#f8fafc' }}>{card.title}</span>
-                    </div>
-                    <div style={{ fontSize: '0.72rem', fontWeight: 600, color: '#38bdf8', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '8px' }}>
-                      {CATEGORY_LABELS[card.category] ?? card.category}
-                    </div>
-                    <p style={{ fontSize: '0.84rem', color: '#94a3b8', lineHeight: 1.7, marginBottom: '10px' }}>
-                      {card.ageAdaptations.CADET.text}
-                    </p>
-                    <div style={{ background: 'rgba(67,255,160,0.06)', border: '1px solid rgba(67,255,160,0.15)', borderRadius: '8px', padding: '10px 12px', fontSize: '0.78rem', color: '#43ffa0' }}>
-                      <strong>Key Takeaway:</strong> {card.ageAdaptations.CADET.keyTakeaway}
-                    </div>
-                    {card.equationOrFormula && (
-                      <div style={{ fontFamily: 'monospace', fontSize: '0.72rem', color: '#a78bfa', marginTop: '8px', background: 'rgba(167,139,250,0.06)', padding: '6px 10px', borderRadius: '6px', border: '1px solid rgba(167,139,250,0.15)' }}>
-                        {card.equationOrFormula}
-                      </div>
-                    )}
-                    <div style={{ marginTop: '8px', fontSize: '0.68rem', color: '#64748b', fontFamily: 'monospace' }}>
-                      NASA Ref: {card.nasaDocReference}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            );
-          })()}
+          {/* ── VIDEO LESSONS (6 CURRICULUM MODULES) ───────────────────────── */}
+          {activeTab === 'VIDEO' && (
+            <VideoLessonPlayerView onLaunchMission={onLaunchMission} />
+          )}
 
           {/* ── MISSION BRIEFINGS ────────────────────────────────────────── */}
           {activeTab === 'BRIEFINGS' && (

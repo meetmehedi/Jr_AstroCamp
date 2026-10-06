@@ -109,6 +109,7 @@ export const App: React.FC = () => {
 
   // New Astro Camp modals
   const [isLearningHubOpen, setIsLearningHubOpen] = useState(false);
+  const [learningHubInitialTab, setLearningHubInitialTab] = useState<'NOTEBOOK' | 'AUDIO' | 'VIDEO' | 'COMIC' | 'BRIEFINGS' | 'CATALOG'>('NOTEBOOK');
   const [isAboutOpen, setIsAboutOpen] = useState(false);
   const [isComicBookOpen, setIsComicBookOpen] = useState(false);
   const [selectedComicIssueId, setSelectedComicIssueId] = useState<string | undefined>(undefined);
@@ -350,6 +351,11 @@ export const App: React.FC = () => {
             setSelectedComicIssueId(undefined);
             setIsComicBookOpen(true);
             soundFx.playClick(750);
+          }}
+          onOpenLearningHub={(tab) => {
+            setLearningHubInitialTab(tab);
+            setIsLearningHubOpen(true);
+            soundFx.playClick(700);
           }}
         />
         <ComicBookModal
@@ -957,6 +963,7 @@ export const App: React.FC = () => {
           setSelectedComicIssueId(issueId);
           setIsComicBookOpen(true);
         }}
+        initialTab={learningHubInitialTab}
       />
 
       {/* NASA STEM Graphic Novel Comic Book Reader Modal */}
