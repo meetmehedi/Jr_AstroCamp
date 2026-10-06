@@ -133,12 +133,6 @@ Open [http://localhost:5173](http://localhost:5173) in your browser.
   - LMS Integrations (Google Classroom, Canvas)
   - Multi-language localization
 
----
-
-## 📄 Pitch Script
-The full 5-minute timed presentation script delivered by Team Mysterio is available in [`PITCH_SCRIPT.md`](file:///Users/md.mehedihasan/Documents/NASAC-2026/PITCH_SCRIPT.md).
-
----
 
 > **Jr_AstroCamp · Team Mysterio**  
 > *"Fly. Learn. Explore."* 🚀
